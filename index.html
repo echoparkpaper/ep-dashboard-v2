@@ -322,9 +322,9 @@ tr.row-soon:hover td{background:rgba(186,117,23,0.07);}
   transition:all 0.15s;
 }
 .wf-select:hover{opacity:0.85;}
-.wf-not-started{background:#f0ede8;color:#7a8090;border-color:#e0dbd3;}
-.wf-in-progress{background:#ebf0f8;color:#2c5282;border-color:rgba(44,82,130,0.3);}
-.wf-done{background:#e8f7f2;color:#1D9E75;border-color:rgba(29,158,117,0.3);}
+.wf-not-started{background:#e8f0fa;color:#4A90D9;border-color:rgba(74,144,217,0.3);}
+.wf-in-progress{background:#fdf0ec;color:#E07A5F;border-color:rgba(224,122,95,0.3);}
+.wf-done{background:#e8f9f4;color:#1D9E75;border-color:rgba(29,158,117,0.3);}
 
 /* ── Note button on rows ── */
 .note-btn{
@@ -1539,7 +1539,7 @@ function setParseStatus(type, msg){
 // ─── Workflow Status ─────────────────────────────────────────────────────────
 const WF_KEY = 'meridian_workflow_status';
 const WF_OPTIONS = ['Not Started','In Progress','Done'];
-const WF_CLASSES = {'Not Started':'wf-not-started','In Progress':'wf-in-progress','Done':'wf-done'};
+const WF_CLASSES = {'Not Started':'wf-not-started', 'In Progress':'wf-in-progress', 'Done':'wf-done'};
 
 function loadWorkflow(){ try{ return JSON.parse(localStorage.getItem(WF_KEY)||'{}'); }catch(e){ return {}; } }
 function saveWorkflow(data){ localStorage.setItem(WF_KEY, JSON.stringify(data)); }
