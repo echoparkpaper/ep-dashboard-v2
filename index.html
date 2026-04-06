@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meridian Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0ede8;
+  --surface:#ffffff;
+  --surface2:#f7f5f2;
+  --border:#e0dbd3;
+  --border2:#ccc7be;
+  --accent:#2c5282;
+  --accent-light:#ebf0f8;
+  --green:#1D9E75;
+  --green-light:#e8f7f2;
+  --orange:#BA7517;
+  --orange-light:#fdf3e0;
+  --red:#c0392b;
+  --red-light:#fdecea;
+  --muted:#7a8090;
+  --text:#1a2332;
+  --header:#1e3a5f;
+  --serif:'DM Serif Display',serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+  --sidebar-w:230px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;zoom:1.1;}
+
+/* ── Header ── */
+header{
+  background:var(--header);
+  padding:0 24px;
+  height:54px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+  position:sticky;
+  top:0;
+  z-index:100;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.logo{font-family:var(--serif);font-size:1.25rem;color:#fff;letter-spacing:0.01em;}
+.logo em{color:#a8c4e0;font-style:italic;}
+.logo-sub{font-size:10px;color:rgba(168,196,224,0.7);font-family:var(--mono);margin-left:12px;}
+
+.header-right{display:flex;align-items:center;gap:12px;}
+.search-wrap{position:relative;}
+.search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);opacity:0.45;pointer-events:none;}
+.search-box{
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.15);
+  color:#fff;
+  border-radius:7px;
+  padding:6px 12px 6px 30px;
+  font-size:12px;
+  font-family:var(--sans);
+  width:220px;
+  outline:none;
+  transition:all 0.2s;
+}
+.search-box::placeholder{color:rgba(255,255,255,0.4);}
+.search-box:focus{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);}
+.data-badge{
+  font-size:10px;
+  font-family:var(--mono);
+  color:rgba(168,196,224,0.8);
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:5px;
+  padding:4px 10px;
+}
+
+/* ── Body layout ── */
+.body-wrap{display:flex;flex:1;min-height:0;}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:var(--sidebar-w);
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  flex-shrink:0;
+  overflow-y:auto;
+}
+.sidebar-section{padding:16px 12px 8px;}
+.sidebar-label{
+  font-size:9.5px;
+  font-weight:600;
+  color:var(--muted);
+  letter-spacing:0.9px;
+  text-transform:uppercase;
+  padding:0 8px;
+  margin-bottom:6px;
+}
+.nav-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:7px 10px;
+  border-radius:7px;
+  cursor:pointer;
+  font-size:12.5px;
+  color:var(--muted);
+  margin-bottom:2px;
+  transition:all 0.15s;
+  border:1px solid transparent;
+  user-select:none;
+}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--accent-light);color:var(--accent);border-color:rgba(44,82,130,0.2);}
+.nav-item .ni-left{display:flex;align-items:center;gap:8px;}
+.nav-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.nav-count{
+  font-family:var(--mono);
+  font-size:10px;
+  background:var(--surface2);
+  color:var(--muted);
+  border-radius:4px;
+  padding:1px 6px;
+  border:1px solid var(--border);
+}
+.nav-item.active .nav-count{background:rgba(44,82,130,0.12);color:var(--accent);border-color:rgba(44,82,130,0.2);}
+
+.sidebar-divider{height:1px;background:var(--border);margin:8px 12px;}
+
+.sidebar-footer{
+  margin-top:auto;
+  padding:12px 16px;
+  border-top:1px solid var(--border);
+}
+.api-status{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);font-family:var(--mono);}
+.api-dot{width:7px;height:7px;border-radius:50%;background:#f59e0b;flex-shrink:0;}
+.api-dot.live{background:var(--green);}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+
+/* ── View header ── */
+.view-header{
+  padding:14px 24px 12px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+  background:var(--surface);
+}
+.view-title{font-family:var(--serif);font-size:1.1rem;color:var(--header);}
+.view-title span{font-family:var(--sans);font-size:11px;color:var(--muted);font-weight:400;margin-left:8px;}
+.view-actions{display:flex;align-items:center;gap:8px;}
+.filter-btn{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  color:var(--muted);
+  border-radius:6px;
+  padding:5px 12px;
+  font-size:11px;
+  font-family:var(--sans);
+  cursor:pointer;
+  transition:all 0.15s;
+}
+.filter-btn:hover,.filter-btn.active{background:var(--accent-light);color:var(--accent);border-color:rgba(44,82,130,0.25);}
+
+/* ── Summary cards ── */
+.summary-row{
+  display:flex;
+  gap:12px;
+  padding:16px 24px;
+  flex-shrink:0;
+  overflow-x:auto;
+}
+.card{
+  flex:1;
+  min-width:130px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px 16px;
+  position:relative;
+  overflow:hidden;
+}
+.card::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  border-radius:10px 10px 0 0;
+}
+.card-red::before{background:var(--red);}
+.card-orange::before{background:var(--orange);}
+.card-blue::before{background:var(--accent);}
+.card-green::before{background:var(--green);}
+.card-purple::before{background:#7c3aed;}
+.card-label{font-size:10px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+.card-value{font-family:var(--mono);font-size:24px;font-weight:500;line-height:1;}
+.card-sub{font-size:10px;color:var(--muted);margin-top:4px;}
+.card-red .card-value{color:var(--red);}
+.card-orange .card-value{color:var(--orange);}
+.card-blue .card-value{color:var(--accent);}
+.card-green .card-value{color:var(--green);}
+.card-purple .card-value{color:#7c3aed;}
+
+/* ── Table ── */
+.table-wrap-outer{flex:1;overflow:auto;padding:0 24px 20px;}
+.table-container{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+  margin-top:4px;
+}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--surface2);}
+th{
+  padding:10px 14px;
+  text-align:left;
+  font-size:10px;
+  font-weight:600;
+  color:var(--muted);
+  letter-spacing:0.6px;
+  text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;
+  cursor:pointer;
+  user-select:none;
+  transition:color 0.15s;
+}
+th:hover{color:var(--text);}
+th.sorted{color:var(--accent);}
+.sort-icon{margin-left:3px;font-size:9px;opacity:0.5;}
+th.sorted .sort-icon{opacity:1;}
+td{
+  padding:10px 14px;
+  font-size:12px;
+  border-bottom:1px solid rgba(0,0,0,0.04);
+  vertical-align:middle;
+}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(0,0,0,0.015);}
+
+/* Row urgency tints */
+tr.row-overdue td{background:rgba(192,57,43,0.04);}
+tr.row-overdue:hover td{background:rgba(192,57,43,0.07);}
+tr.row-soon td{background:rgba(186,117,23,0.04);}
+tr.row-soon:hover td{background:rgba(186,117,23,0.07);}
+
+/* Cell styles */
+.exp-date{font-family:var(--mono);font-size:11.5px;font-weight:500;}
+.exp-overdue{color:var(--red);}
+.exp-soon{color:var(--orange);}
+.exp-ok{color:var(--text);}
+
+.days-pill{
+  display:inline-block;
+  font-family:var(--mono);
+  font-size:10px;
+  padding:2px 7px;
+  border-radius:20px;
+  white-space:nowrap;
+}
+.days-overdue{background:var(--red-light);color:var(--red);border:1px solid rgba(192,57,43,0.2);}
+.days-soon{background:var(--orange-light);color:var(--orange);border:1px solid rgba(186,117,23,0.2);}
+.days-ok{background:var(--accent-light);color:var(--accent);border:1px solid rgba(44,82,130,0.15);}
+
+.client-name{font-weight:500;color:var(--text);}
+.client-code{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:1px;}
+
+.line-badge{
+  display:inline-block;
+  font-family:var(--mono);
+  font-size:10.5px;
+  background:var(--surface2);
+  color:var(--text);
+  padding:2px 8px;
+  border-radius:5px;
+  border:1px solid var(--border);
+}
+
+.status-badge{
+  display:inline-flex;
+  align-items:center;
+  padding:2px 8px;
+  border-radius:5px;
+  font-size:10px;
+  font-weight:600;
+  font-family:var(--mono);
+  letter-spacing:0.3px;
+}
+.s-new{background:var(--accent-light);color:var(--accent);border:1px solid rgba(44,82,130,0.25);}
+.s-ren{background:var(--green-light);color:var(--green);border:1px solid rgba(29,158,117,0.25);}
+.s-can{background:#f3f4f6;color:#9ca3af;border:1px solid #e5e7eb;}
+
+.ico-text{font-family:var(--mono);font-size:10.5px;color:var(--muted);}
+.policy-no{font-family:var(--mono);font-size:11px;color:var(--text);}
+.premium-cell{font-family:var(--mono);font-size:12px;text-align:right;font-weight:500;}
+.premium-high{color:var(--orange);}
+.premium-big{color:#7c3aed;}
+
+.empty-msg{text-align:center;padding:52px 20px;color:var(--muted);font-size:13px;}
+
+/* ── Note button on rows ── */
+.note-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  background:none;
+  border:1px solid var(--border);
+  border-radius:5px;
+  color:var(--muted);
+  cursor:pointer;
+  padding:3px 8px;
+  font-size:10px;
+  font-family:var(--sans);
+  transition:all 0.15s;
+  white-space:nowrap;
+}
+.note-btn:hover{background:var(--accent-light);color:var(--accent);border-color:rgba(44,82,130,0.3);}
+.note-btn.has-notes{background:var(--accent-light);color:var(--accent);border-color:rgba(44,82,130,0.3);}
+.note-count{
+  background:var(--accent);
+  color:#fff;
+  border-radius:8px;
+  font-size:9px;
+  font-family:var(--mono);
+  padding:0 5px;
+  line-height:14px;
+  display:inline-block;
+}
+
+/* ── Notes Panel ── */
+.notes-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(15,20,35,0.3);
+  z-index:200;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.2s ease;
+}
+.notes-overlay.open{opacity:1;pointer-events:all;}
+
+.notes-panel{
+  position:fixed;
+  top:0;right:0;bottom:0;
+  width:380px;
+  background:var(--surface);
+  border-left:1px solid var(--border);
+  z-index:201;
+  display:flex;
+  flex-direction:column;
+  transform:translateX(100%);
+  transition:transform 0.25s ease;
+  box-shadow:-4px 0 24px rgba(0,0,0,0.12);
+}
+.notes-panel.open{transform:translateX(0);}
+
+.notes-panel-header{
+  padding:16px 18px 14px;
+  border-bottom:1px solid var(--border);
+  background:var(--header);
+  flex-shrink:0;
+}
+.notes-panel-title{font-family:var(--serif);font-size:1rem;color:#fff;margin-bottom:4px;}
+.notes-panel-meta{font-size:10px;color:rgba(168,196,224,0.8);font-family:var(--mono);display:flex;gap:10px;flex-wrap:wrap;}
+.notes-panel-close{
+  position:absolute;
+  top:14px;right:16px;
+  background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.18);
+  color:#fff;
+  border-radius:5px;
+  width:26px;height:26px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  font-size:14px;
+  line-height:1;
+  transition:background 0.15s;
+}
+.notes-panel-close:hover{background:rgba(255,255,255,0.22);}
+
+.notes-list{
+  flex:1;
+  overflow-y:auto;
+  padding:14px 18px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.note-empty{
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  margin-top:30px;
+}
+.note-item{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:11px 13px;
+  position:relative;
+}
+.note-text{font-size:13px;color:var(--text);line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+.note-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
+.note-ts{font-size:10px;color:var(--muted);font-family:var(--mono);}
+.note-del{
+  background:none;
+  border:none;
+  color:var(--muted);
+  cursor:pointer;
+  font-size:11px;
+  padding:2px 6px;
+  border-radius:4px;
+  transition:all 0.15s;
+}
+.note-del:hover{background:var(--red-light);color:var(--red);}
+
+.notes-compose{
+  padding:14px 18px;
+  border-top:1px solid var(--border);
+  flex-shrink:0;
+  background:var(--surface);
+}
+.notes-textarea{
+  width:100%;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:7px;
+  padding:9px 12px;
+  font-size:12.5px;
+  font-family:var(--sans);
+  color:var(--text);
+  resize:none;
+  outline:none;
+  transition:border-color 0.15s;
+  line-height:1.5;
+  min-height:80px;
+}
+.notes-textarea:focus{border-color:var(--accent);}
+.notes-textarea::placeholder{color:var(--muted);}
+.notes-save-btn{
+  margin-top:8px;
+  width:100%;
+  background:var(--header);
+  color:#fff;
+  border:none;
+  border-radius:7px;
+  padding:8px;
+  font-size:12px;
+  font-family:var(--sans);
+  font-weight:500;
+  cursor:pointer;
+  transition:background 0.15s;
+}
+.notes-save-btn:hover{background:var(--accent);}
+.notes-save-btn:disabled{opacity:0.4;cursor:default;}
+
+/* ── Upload Modal ── */
+.modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(15,20,35,0.45);
+  z-index:400;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.2s ease;
+}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-box{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  width:560px;
+  max-width:95vw;
+  max-height:88vh;
+  display:flex;flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,0.2);
+  transform:translateY(12px);
+  transition:transform 0.25s ease;
+  overflow:hidden;
+}
+.modal-overlay.open .modal-box{transform:translateY(0);}
+.modal-header{
+  background:var(--header);
+  padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.modal-title{font-family:var(--serif);font-size:1rem;color:#fff;}
+.modal-close{
+  background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.18);
+  color:#fff;border-radius:5px;
+  width:26px;height:26px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:14px;transition:background 0.15s;
+}
+.modal-close:hover{background:rgba(255,255,255,0.22);}
+.modal-body{flex:1;overflow-y:auto;padding:20px;}
+.modal-footer{
+  padding:14px 20px;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+  background:var(--surface2);
+}
+
+/* Drop zone */
+.drop-zone{
+  border:2px dashed var(--border2);
+  border-radius:10px;
+  padding:36px 24px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.2s;
+  background:var(--surface2);
+  position:relative;
+}
+.drop-zone:hover,.drop-zone.drag-over{
+  border-color:var(--accent);
+  background:var(--accent-light);
+}
+.drop-zone input[type=file]{
+  position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;
+}
+.drop-icon{font-size:32px;margin-bottom:10px;}
+.drop-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;}
+.drop-sub{font-size:11px;color:var(--muted);}
+.drop-types{
+  display:flex;gap:6px;justify-content:center;margin-top:12px;
+}
+.drop-type{
+  font-family:var(--mono);font-size:10px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--muted);border-radius:4px;padding:2px 8px;
+}
+
+/* Parse status */
+.parse-status{
+  margin-top:14px;padding:10px 14px;
+  border-radius:7px;font-size:12px;
+  display:none;
+}
+.parse-status.parsing{background:#fffbeb;border:1px solid #fde68a;color:var(--orange);display:block;}
+.parse-status.success{background:var(--green-light);border:1px solid rgba(29,158,117,0.3);color:var(--green);display:block;}
+.parse-status.error{background:var(--red-light);border:1px solid rgba(192,57,43,0.3);color:var(--red);display:block;}
+
+/* Preview table */
+.preview-wrap{margin-top:16px;display:none;}
+.preview-label{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:8px;}
+.preview-table-wrap{border:1px solid var(--border);border-radius:7px;overflow:auto;max-height:220px;}
+.preview-table-wrap table{width:100%;border-collapse:collapse;font-size:11px;}
+.preview-table-wrap th{
+  padding:6px 10px;text-align:left;
+  font-size:9px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.5px;
+  background:var(--surface2);border-bottom:1px solid var(--border);
+  white-space:nowrap;position:sticky;top:0;
+}
+.preview-table-wrap td{
+  padding:6px 10px;border-bottom:1px solid rgba(0,0,0,0.04);
+  white-space:nowrap;color:var(--text);
+}
+.preview-table-wrap tr:last-child td{border-bottom:none;}
+
+/* Load mode radio */
+.load-mode{margin-top:14px;display:none;}
+.load-mode-label{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:8px;}
+.radio-group{display:flex;gap:10px;}
+.radio-opt{
+  flex:1;border:1px solid var(--border);border-radius:7px;
+  padding:10px 12px;cursor:pointer;transition:all 0.15s;
+  display:flex;align-items:flex-start;gap:8px;
+}
+.radio-opt:hover{border-color:var(--accent);background:var(--accent-light);}
+.radio-opt.selected{border-color:var(--accent);background:var(--accent-light);}
+.radio-opt input{margin-top:2px;accent-color:var(--accent);}
+.radio-opt-title{font-size:12px;font-weight:500;color:var(--text);}
+.radio-opt-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* Upload btn in sidebar */
+.upload-btn{
+  width:100%;
+  background:var(--header);
+  color:#fff;border:none;
+  border-radius:7px;
+  padding:8px 12px;
+  font-size:12px;
+  font-family:var(--sans);
+  font-weight:500;
+  cursor:pointer;
+  transition:background 0.15s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-top:10px;
+}
+.upload-btn:hover{background:var(--accent);}
+.clear-data-btn{width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all 0.15s;margin-top:6px;}
+.clear-data-btn:hover{background:#fef2f2;color:#c0392b;border-color:#f5c6c6;}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;
+  bottom:20px;left:50%;
+  transform:translateX(-50%) translateY(10px);
+  background:var(--header);
+  color:#fff;
+  padding:8px 18px;
+  border-radius:8px;
+  font-size:12px;
+  font-family:var(--sans);
+  opacity:0;
+  pointer-events:none;
+  transition:all 0.3s ease;
+  z-index:300;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── Footer ── */
+footer{
+  padding:10px 24px;
+  border-top:1px solid var(--border);
+  display:flex;
+  justify-content:flex-end;
+  background:var(--surface);
+  flex-shrink:0;
+}
+.footer-copy{font-family:var(--mono);font-size:9px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div style="display:flex;align-items:baseline;gap:0;">
+    <div class="logo">Meridian <em>Dashboard</em></div>
+    <div class="logo-sub">Policy Expiration Tracker</div>
+  </div>
+  <div class="header-right">
+    <div class="data-badge" id="data-badge">📄 Report: 4/1/2026 · Page 1 of 2</div>
+    <div class="search-wrap">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-box" type="text" placeholder="Search client, policy #, line…" oninput="onSearch(this.value)" id="search-input">
+    </div>
+  </div>
+</header>
+
+<!-- Body -->
+<div class="body-wrap">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Views</div>
+      <div class="nav-item active" onclick="setView('all')" id="nav-all">
+        <span class="ni-left">
+          <span class="nav-dot" style="background:#b0b8c8;"></span>
+          All Policies
+        </span>
+        <span class="nav-count" id="cnt-all">—</span>
+      </div>
+      <div class="nav-item" onclick="setView('overdue')" id="nav-overdue">
+        <span class="ni-left">
+          <span class="nav-dot" style="background:var(--red);"></span>
+          Past Due
+        </span>
+        <span class="nav-count" id="cnt-overdue">—</span>
+      </div>
+      <div class="nav-item" onclick="setView('30')" id="nav-30">
+        <span class="ni-left">
+          <span class="nav-dot" style="background:var(--orange);"></span>
+          Next 30 Days
+        </span>
+        <span class="nav-count" id="cnt-30">—</span>
+      </div>
+      <div class="nav-item" onclick="setView('60')" id="nav-60">
+        <span class="ni-left">
+          <span class="nav-dot" style="background:var(--accent);"></span>
+          Next 60 Days
+        </span>
+        <span class="nav-count" id="cnt-60">—</span>
+      </div>
+      <div class="nav-item" onclick="setView('90')" id="nav-90">
+        <span class="ni-left">
+          <span class="nav-dot" style="background:var(--green);"></span>
+          Next 90 Days
+        </span>
+        <span class="nav-count" id="cnt-90">—</span>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">By Status</div>
+      <div class="nav-item" onclick="setView('new')" id="nav-new">
+        <span class="ni-left">
+          <span class="nav-dot" style="background:var(--accent);"></span>
+          New
+        </span>
+        <span class="nav-count" id="cnt-new">—</span>
+      </div>
+      <div class="nav-item" onclick="setView('ren')" id="nav-ren">
+        <span class="ni-left">
+          <span class="nav-dot" style="background:var(--green);"></span>
+          Renewal
+        </span>
+        <span class="nav-count" id="cnt-ren">—</span>
+      </div>
+      <div class="nav-item" onclick="setView('can')" id="nav-can">
+        <span class="ni-left">
+          <span class="nav-dot" style="background:#9ca3af;"></span>
+          Cancelled
+        </span>
+        <span class="nav-count" id="cnt-can">—</span>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Producer</div>
+      <div class="nav-item active-sub" onclick="setView('prod-COOKNA')" id="nav-prod-COOKNA">
+        <span class="ni-left">
+          <span class="nav-dot" style="background:#7c3aed;"></span>
+          Nathanael Cook
+        </span>
+        <span class="nav-count" id="cnt-prod-COOKNA">—</span>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="upload-btn" onclick="openUploadModal()">
+        ⬆ Upload Report
+      </button>
+      <button class="clear-data-btn" onclick="clearAllData()">🗑 Clear All Data</button>
+      <div class="api-status" style="margin-top:10px;">
+        <div class="api-dot" id="api-dot"></div>
+        <span id="api-status-text">Static · Epic API Not Connected</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- View header -->
+    <div class="view-header">
+      <div class="view-title" id="view-title">
+        All Policies
+        <span id="view-sub"></span>
+      </div>
+      <div class="view-actions">
+        <button class="filter-btn active" onclick="setBillMode('all')" id="bm-all">All</button>
+        <button class="filter-btn" onclick="setBillMode('D')" id="bm-D">Direct Bill</button>
+        <button class="filter-btn" onclick="setBillMode('A')" id="bm-A">Agency Bill</button>
+      </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="summary-row" id="summary-row"></div>
+
+    <!-- Table -->
+    <div class="table-wrap-outer">
+      <div class="table-container">
+        <table id="policy-table">
+          <thead>
+            <tr>
+              <th onclick="sortBy('expDate')">Exp Date <span class="sort-icon" id="si-expDate">↕</span></th>
+              <th onclick="sortBy('days')">Days <span class="sort-icon" id="si-days">↕</span></th>
+              <th onclick="sortBy('clientName')">Client <span class="sort-icon" id="si-clientName">↕</span></th>
+              <th onclick="sortBy('policyLine')">Line <span class="sort-icon" id="si-policyLine">↕</span></th>
+              <th onclick="sortBy('status')">Status <span class="sort-icon" id="si-status">↕</span></th>
+              <th onclick="sortBy('billMode')">Bill <span class="sort-icon" id="si-billMode">↕</span></th>
+              <th onclick="sortBy('ico')">ICO <span class="sort-icon" id="si-ico">↕</span></th>
+              <th onclick="sortBy('policyNo')">Policy # <span class="sort-icon" id="si-policyNo">↕</span></th>
+              <th onclick="sortBy('premium')" style="text-align:right;">Est. Premium <span class="sort-icon" id="si-premium">↕</span></th>
+              <th style="cursor:default;width:80px;text-align:center;">Notes</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-copy">© 2026 vintage3329,llc</div>
+    </footer>
+  </div>
+
+</div>
+
+<!-- Notes overlay + panel -->
+<div class="notes-overlay" id="notes-overlay" onclick="closeNotes()"></div>
+<div class="notes-panel" id="notes-panel">
+  <div class="notes-panel-header" style="position:relative;">
+    <div class="notes-panel-title" id="np-title">Notes</div>
+    <div class="notes-panel-meta" id="np-meta"></div>
+    <button class="notes-panel-close" onclick="closeNotes()">✕</button>
+  </div>
+  <div class="notes-list" id="notes-list"></div>
+  <div class="notes-compose">
+    <textarea class="notes-textarea" id="note-input" placeholder="Add a note about this policy…" rows="3"></textarea>
+    <button class="notes-save-btn" id="note-save-btn" onclick="saveNote()">Save Note</button>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal-overlay" id="upload-overlay" onclick="onOverlayClick(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Upload Expiration Report</div>
+      <button class="modal-close" onclick="closeUploadModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Drop zone -->
+      <div class="drop-zone" id="drop-zone"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <input type="file" id="file-input" accept=".pdf,.csv,.txt" onchange="onFileChange(event)">
+        <div class="drop-icon">📂</div>
+        <div class="drop-title">Drop your report here, or click to browse</div>
+        <div class="drop-sub">Applied Epic Expiration Report exported as PDF or CSV</div>
+        <div class="drop-types">
+          <span class="drop-type">PDF</span>
+          <span class="drop-type">CSV</span>
+          <span class="drop-type">TXT</span>
+        </div>
+      </div>
+
+      <!-- Parse status -->
+      <div class="parse-status" id="parse-status"></div>
+
+      <!-- Preview -->
+      <div class="preview-wrap" id="preview-wrap">
+        <div class="preview-label" id="preview-label">Preview</div>
+        <div class="preview-table-wrap">
+          <table id="preview-table">
+            <thead>
+              <tr>
+                <th>Exp Date</th><th>Client</th><th>Line</th>
+                <th>Status</th><th>Policy #</th><th>Premium</th>
+              </tr>
+            </thead>
+            <tbody id="preview-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Load mode -->
+      <div class="load-mode" id="load-mode">
+        <div class="load-mode-label">How to load this data</div>
+        <div class="radio-group">
+          <label class="radio-opt selected" id="opt-replace" onclick="selectMode('replace')">
+            <input type="radio" name="loadmode" value="replace" checked>
+            <div>
+              <div class="radio-opt-title">Replace</div>
+              <div class="radio-opt-sub">Clear existing data and load this report</div>
+            </div>
+          </label>
+          <label class="radio-opt" id="opt-merge" onclick="selectMode('merge')">
+            <input type="radio" name="loadmode" value="merge">
+            <div>
+              <div class="radio-opt-title">Merge</div>
+              <div class="radio-opt-sub">Add to existing policies (skip duplicates)</div>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div style="font-size:11px;color:var(--muted);" id="modal-footer-note"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="filter-btn" onclick="closeUploadModal()">Cancel</button>
+        <button class="notes-save-btn" id="load-btn" onclick="confirmLoad()"
+                style="width:auto;padding:8px 20px;margin:0;" disabled>Load Report</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Data ────────────────────────────────────────────────────────────────────
+// Source: Applied Epic Expiration Report · 4/1/2026 · Producer: COOKNA (Nathanael Cook)
+// Page 1 of 2 — Page 2 to be added
+const RAW_POLICIES = [];
+
+// ─── State ───────────────────────────────────────────────────────────────────
+const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+let currentView = 'all';
+let billFilter  = 'all';
+let searchQuery = '';
+let sortCol     = 'expDate';
+let sortDir     = 1;
+
+const DATA_KEY = 'meridian_policy_data';
+const META_KEY = 'meridian_data_meta';
+
+function withDays(raw){
+  const exp = new Date(raw.expDate); exp.setHours(0,0,0,0);
+  return {...raw, days: Math.round((exp - TODAY) / 86400000)};
+}
+
+// Load from localStorage if available, else fall back to hardcoded data
+function loadStoredPolicies(){
+  try{
+    const stored = localStorage.getItem(DATA_KEY);
+    if(stored){ const arr=JSON.parse(stored); if(arr.length) return arr.map(withDays); }
+  }catch(e){}
+  return RAW_POLICIES.map(withDays);
+}
+
+let POLICIES = loadStoredPolicies();
+
+function updateDataBadge(){
+  const meta = getDataMeta();
+  const badge = document.getElementById('data-badge');
+  if(!badge) return;
+  if(meta){
+    badge.textContent = `📄 ${meta.filename} · ${meta.count} policies · ${meta.loadedAt}`;
+  } else {
+    badge.textContent = '📄 Report: 4/1/2026 · Page 1 of 2 (built-in)';
+  }
+}
+
+function getDataMeta(){
+  try{ return JSON.parse(localStorage.getItem(META_KEY)||'null'); }catch(e){ return null; }
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function urgency(days){return days<0?'overdue':days<=30?'soon':'ok';}
+
+function fmtDate(str){
+  const d = new Date(str);
+  return (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear();
+}
+
+function fmtDays(days){
+  if(days<0) return Math.abs(days)+'d past';
+  if(days===0) return 'Today';
+  return days+'d';
+}
+
+function fmtPrem(val){
+  return '$'+val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ─── Filter + Sort ───────────────────────────────────────────────────────────
+function getFiltered(){
+  let data = [...POLICIES];
+
+  if(currentView==='overdue')          data=data.filter(p=>p.days<0);
+  else if(currentView==='30')          data=data.filter(p=>p.days>=0&&p.days<=30);
+  else if(currentView==='60')          data=data.filter(p=>p.days>=0&&p.days<=60);
+  else if(currentView==='90')          data=data.filter(p=>p.days>=0&&p.days<=90);
+  else if(currentView==='new')         data=data.filter(p=>p.status==='NEW');
+  else if(currentView==='ren')         data=data.filter(p=>p.status==='REN');
+  else if(currentView==='can')         data=data.filter(p=>p.status==='CAN');
+  else if(currentView.startsWith('prod-')) {
+    const prod=currentView.slice(5);
+    data=data.filter(p=>p.producer===prod);
+  }
+
+  if(billFilter!=='all') data=data.filter(p=>p.billMode===billFilter);
+
+  if(searchQuery){
+    const q=searchQuery.toLowerCase();
+    data=data.filter(p=>
+      p.clientName.toLowerCase().includes(q)||
+      p.policyNo.toLowerCase().includes(q)||
+      p.clientCode.toLowerCase().includes(q)||
+      p.policyLine.toLowerCase().includes(q)||
+      p.ico.toLowerCase().includes(q)
+    );
+  }
+
+  data.sort((a,b)=>{
+    let av=a[sortCol], bv=b[sortCol];
+    if(typeof av==='string') av=av.toLowerCase();
+    if(typeof bv==='string') bv=bv.toLowerCase();
+    if(av<bv) return -1*sortDir;
+    if(av>bv) return  1*sortDir;
+    return 0;
+  });
+
+  return data;
+}
+
+// ─── Render ──────────────────────────────────────────────────────────────────
+function render(){
+  const data = getFiltered();
+  renderCards(data);
+  renderTable(data);
+  updateSortIcons();
+}
+
+function renderCards(data){
+  const all      = POLICIES;
+  const overdue  = all.filter(p=>p.days<0).length;
+  const soon30   = all.filter(p=>p.days>=0&&p.days<=30).length;
+  const showing  = data.length;
+  const renCount = data.filter(p=>p.status==='REN').length;
+  const newCount = data.filter(p=>p.status==='NEW').length;
+  const totPrem  = data.reduce((s,p)=>s+p.premium,0);
+
+  document.getElementById('summary-row').innerHTML=`
+    <div class="card card-red">
+      <div class="card-label">Past Due</div>
+      <div class="card-value">${overdue}</div>
+      <div class="card-sub">Expired policies</div>
+    </div>
+    <div class="card card-orange">
+      <div class="card-label">Expiring ≤ 30 Days</div>
+      <div class="card-value">${soon30}</div>
+      <div class="card-sub">Needs immediate action</div>
+    </div>
+    <div class="card card-blue">
+      <div class="card-label">Showing</div>
+      <div class="card-value">${showing}</div>
+      <div class="card-sub">of ${all.length} total policies</div>
+    </div>
+    <div class="card card-green">
+      <div class="card-label">Renewals in View</div>
+      <div class="card-value">${renCount}</div>
+      <div class="card-sub">${newCount} new in view</div>
+    </div>
+    <div class="card card-purple">
+      <div class="card-label">Est. Premium</div>
+      <div class="card-value" style="font-size:17px;">${fmtPrem(totPrem)}</div>
+      <div class="card-sub">In current view</div>
+    </div>
+  `;
+}
+
+function renderTable(data){
+  const tbody = document.getElementById('table-body');
+  if(!data.length){
+    tbody.innerHTML='<tr><td colspan="9" class="empty-msg">No policies match your filters.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(p=>{
+    const u = urgency(p.days);
+    const rowClass = u==='overdue'?'row-overdue':u==='soon'?'row-soon':'';
+    const dateClass= u==='overdue'?'exp-overdue':u==='soon'?'exp-soon':'exp-ok';
+    const daysClass= u==='overdue'?'days-overdue':u==='soon'?'days-soon':'days-ok';
+    const sClass   = p.status==='NEW'?'s-new':p.status==='REN'?'s-ren':'s-can';
+    const pClass   = p.premium>=50000?'premium-cell premium-big':p.premium>=10000?'premium-cell premium-high':'premium-cell';
+    return `<tr class="${rowClass}">
+      <td><span class="exp-date ${dateClass}">${fmtDate(p.expDate)}</span></td>
+      <td><span class="days-pill ${daysClass}">${fmtDays(p.days)}</span></td>
+      <td>
+        <div class="client-name">${esc(p.clientName)}</div>
+        <div class="client-code">${esc(p.clientCode)}</div>
+      </td>
+      <td><span class="line-badge">${esc(p.policyLine)}</span></td>
+      <td><span class="status-badge ${sClass}">${p.status}</span></td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--muted);">${p.billMode==='D'?'Direct':'Agency'}</td>
+      <td><span class="ico-text">${esc(p.ico)}</span></td>
+      <td><span class="policy-no">${esc(p.policyNo)}</span></td>
+      <td class="${pClass}">${fmtPrem(p.premium)}</td>
+      <td style="text-align:center;">${noteBtn(p.policyNo)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateSortIcons(){
+  const cols=['expDate','days','clientName','policyLine','status','billMode','ico','policyNo','premium'];
+  cols.forEach(c=>{
+    const el=document.getElementById('si-'+c);
+    const th=el?.closest('th');
+    if(c===sortCol){
+      if(el) el.textContent=sortDir===1?'↑':'↓';
+      if(th) th.classList.add('sorted');
+    } else {
+      if(el) el.textContent='↕';
+      if(th) th.classList.remove('sorted');
+    }
+  });
+}
+
+function updateSidebarCounts(){
+  const all=POLICIES;
+  document.getElementById('cnt-all').textContent=all.length;
+  document.getElementById('cnt-overdue').textContent=all.filter(p=>p.days<0).length;
+  document.getElementById('cnt-30').textContent=all.filter(p=>p.days>=0&&p.days<=30).length;
+  document.getElementById('cnt-60').textContent=all.filter(p=>p.days>=0&&p.days<=60).length;
+  document.getElementById('cnt-90').textContent=all.filter(p=>p.days>=0&&p.days<=90).length;
+  document.getElementById('cnt-new').textContent=all.filter(p=>p.status==='NEW').length;
+  document.getElementById('cnt-ren').textContent=all.filter(p=>p.status==='REN').length;
+  document.getElementById('cnt-can').textContent=all.filter(p=>p.status==='CAN').length;
+  document.getElementById('cnt-prod-COOKNA').textContent=all.filter(p=>p.producer==='COOKNA').length;
+}
+
+// ─── Actions ─────────────────────────────────────────────────────────────────
+const VIEW_TITLES={
+  all:'All Policies',overdue:'Past Due',
+  '30':'Next 30 Days','60':'Next 60 Days','90':'Next 90 Days',
+  new:'New Policies',ren:'Renewals',can:'Cancelled',
+  'prod-COOKNA':'Nathanael Cook'
+};
+
+function setView(v){
+  currentView=v;
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const navEl=document.getElementById('nav-'+v);
+  if(navEl) navEl.classList.add('active');
+  const title=VIEW_TITLES[v]||v;
+  document.getElementById('view-title').innerHTML=title+'<span id="view-sub"></span>';
+  render();
+}
+
+function setBillMode(m){
+  billFilter=m;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('bm-'+m)?.classList.add('active');
+  render();
+}
+
+function onSearch(val){
+  searchQuery=val.trim();
+  render();
+}
+
+function sortBy(col){
+  if(sortCol===col) sortDir*=-1;
+  else{sortCol=col;sortDir=1;}
+  render();
+}
+
+// ─── Upload Portal ───────────────────────────────────────────────────────────
+let _parsedPolicies = [];
+let _loadMode = 'replace';
+let _uploadFilename = '';
+
+function openUploadModal(){
+  _parsedPolicies = [];
+  _loadMode = 'replace';
+  _uploadFilename = '';
+  document.getElementById('file-input').value = '';
+  document.getElementById('parse-status').className = 'parse-status';
+  document.getElementById('parse-status').textContent = '';
+  document.getElementById('preview-wrap').style.display = 'none';
+  document.getElementById('load-mode').style.display = 'none';
+  document.getElementById('load-btn').disabled = true;
+  document.getElementById('modal-footer-note').textContent = '';
+  selectMode('replace');
+  document.getElementById('upload-overlay').classList.add('open');
+}
+
+function clearAllData(){
+  if(!confirm('Clear all policy data? This cannot be undone.'))return;
+  localStorage.removeItem(DATA_KEY);
+  localStorage.removeItem(META_KEY);
+  POLICIES=[];
+  render();
+  showToast('All data cleared');
+}
+
+function closeUploadModal(){
+  document.getElementById('upload-overlay').classList.remove('open');
+}
+
+function onOverlayClick(e){
+  if(e.target === document.getElementById('upload-overlay')) closeUploadModal();
+}
+
+// Drag & drop
+function onDragOver(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.add('drag-over');
+}
+function onDragLeave(){
+  document.getElementById('drop-zone').classList.remove('drag-over');
+}
+function onDrop(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if(file) handleFile(file);
+}
+function onFileChange(e){
+  const file = e.target.files[0];
+  if(file) handleFile(file);
+}
+
+function handleFile(file){
+  _uploadFilename = file.name;
+  setParseStatus('parsing', '⏳ Reading file…');
+  document.getElementById('preview-wrap').style.display = 'none';
+  document.getElementById('load-mode').style.display = 'none';
+  document.getElementById('load-btn').disabled = true;
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  if(ext === 'pdf'){
+    parsePDF(file);
+  } else if(ext === 'csv' || ext === 'txt'){
+    const reader = new FileReader();
+    reader.onload = e => {
+      const policies = parseCSVText(e.target.result);
+      onParsed(policies, file.name);
+    };
+    reader.readAsText(file);
+  } else {
+    setParseStatus('error', '⚠️ Unsupported file type. Please upload a PDF, CSV, or TXT file.');
+  }
+}
+
+// ── PDF parsing via PDF.js CDN ──
+function loadPdfJs(){
+  return new Promise((resolve, reject) => {
+    if(window.pdfjsLib){ resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve();
+    };
+    s.onerror = () => reject(new Error('Could not load PDF.js'));
+    document.head.appendChild(s);
+  });
+}
+
+async function parsePDF(file){
+  try{
+    await loadPdfJs();
+    setParseStatus('parsing', '⏳ Parsing PDF…');
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+    let fullText = '';
+
+    for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++){
+      const page = await pdf.getPage(pageNum);
+      const content = await page.getTextContent();
+
+      // Pull out non-empty items with x/y/width
+      const items = content.items
+        .filter(i => i.str && i.str.trim())
+        .map(i => ({
+          str: i.str,
+          x: i.transform[4],
+          y: i.transform[5],
+          w: i.width || 0
+        }));
+
+      if(!items.length) continue;
+
+      // Determine a row-height threshold from the data itself
+      // (median gap between consecutive unique y values)
+      const ys = [...new Set(items.map(i => Math.round(i.y)))].sort((a,b)=>b-a);
+      const gaps = [];
+      for(let k=1;k<ys.length;k++) gaps.push(Math.abs(ys[k]-ys[k-1]));
+      const medGap = gaps.length ? gaps.slice().sort((a,b)=>a-b)[Math.floor(gaps.length/2)] : 10;
+      const ROW_TOL = Math.max(4, Math.min(medGap * 0.6, 12));
+
+      // Sort top-to-bottom (y desc in PDF coords), then left-to-right
+      items.sort((a,b)=>{
+        const dy = b.y - a.y;
+        if(Math.abs(dy) > ROW_TOL) return dy;
+        return a.x - b.x;
+      });
+
+      // Group into rows by y proximity
+      const rows = [];
+      let curRow = [], curY = null;
+      for(const item of items){
+        if(curY === null || Math.abs(item.y - curY) <= ROW_TOL){
+          curRow.push(item);
+          if(curY === null) curY = item.y;
+        } else {
+          if(curRow.length) rows.push([...curRow]);
+          curRow = [item]; curY = item.y;
+        }
+      }
+      if(curRow.length) rows.push(curRow);
+
+      // Convert each row to a text line, inserting spaces where there are x-gaps
+      for(const row of rows){
+        row.sort((a,b) => a.x - b.x);
+        let line = '';
+        let prevRight = null;
+        for(const item of row){
+          const rightEdge = item.x + (item.w > 0 ? item.w : item.str.length * 5.5);
+          if(prevRight !== null && item.x - prevRight > 3){
+            line += ' ';
+          }
+          line += item.str;
+          prevRight = rightEdge;
+        }
+        const trimmed = line.trim();
+        if(trimmed) fullText += trimmed + '\n';
+      }
+    }
+
+    // Normalise whitespace around slashes in dates (e.g. "3 / 1 / 2026" → "3/1/2026")
+    fullText = fullText.replace(/(\d)\s*\/\s*(\d)/g, '$1/$2');
+
+    const policies = parseAppliedEpicText(fullText);
+
+    // Debug: if nothing found, surface the raw text so we can diagnose
+    if(!policies.length){
+      console.log('PDF raw text extract:\n', fullText);
+      setParseStatus('error',
+        '⚠️ No policy rows found in this PDF. ' +
+        'Check the browser console (F12 → Console) to see the raw extracted text, ' +
+        'or try exporting as CSV from Applied Epic.');
+      return;
+    }
+
+    onParsed(policies, file.name);
+  }catch(err){
+    setParseStatus('error', '⚠️ PDF error: ' + err.message);
+    console.error('parsePDF error:', err);
+  }
+}
+
+// ── Applied Epic text parser (for PDF-extracted text) ──
+function parseAppliedEpicText(text){
+  const policies = [];
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+  // Date can appear as "3/1/2026" anywhere at start of line (allow leading whitespace)
+  const dateRe = /^(\d{1,2}\/\d{1,2}\/\d{4})\s+(.*)/;
+  // Premium: optional $, digits/commas, decimal — at or near end of string
+  const premRe = /\$?\s*([\d,]+\.\d{2})\s*$/;
+  const statusRe = /\b(NEW|REN|CAN)\b/;
+
+  for(const line of lines){
+    const dm = line.match(dateRe);
+    if(!dm) continue;
+    const dateStr = dm[1];
+    let rest = dm[2].trim();
+    if(!rest) continue;
+
+    // Premium — match at end, with or without $
+    const pm = rest.match(premRe);
+    if(!pm) continue;
+    const premium = parseFloat(pm[1].replace(/,/g,''));
+    // Strip the premium (and any leading $) from the end
+    const premStart = rest.lastIndexOf(pm[0]);
+    let before = rest.slice(0, premStart).trim();
+    // Also strip a lone $ that might be left over
+    before = before.replace(/\$$/, '').trim();
+
+    // Status
+    const sm = before.match(statusRe);
+    if(!sm) continue;
+    const status = sm[1];
+    const si = before.search(statusRe);
+    const preStatus  = before.slice(0, si).trim();
+    const postStatus = before.slice(si + status.length).trim();
+
+    // After status: billMode  ico  [policyNo tokens...]
+    const postParts = postStatus.split(/\s+/).filter(Boolean);
+    if(postParts.length < 2) continue;
+    const billMode = postParts[0];
+    const ico      = postParts[1];
+    const policyNo = postParts.slice(2).join(' ');
+
+    // Before status: clientCode  clientName...  producer  policyLine
+    const preParts = preStatus.split(/\s+/).filter(Boolean);
+    if(preParts.length < 3) continue;
+    const clientCode = preParts[0];
+    const policyLine = preParts[preParts.length - 1];
+    const producer   = preParts[preParts.length - 2];
+    const clientName = preParts.slice(1, -2).join(' ');
+
+    // ISO date
+    const [mo, dy, yr] = dateStr.split('/');
+    const expDate = `${yr}-${mo.padStart(2,'0')}-${dy.padStart(2,'0')}`;
+
+    policies.push({expDate, clientCode, clientName, producer,
+                   policyLine, status, billMode, ico, policyNo, premium});
+  }
+  return policies;
+}
+
+// ── CSV parser ──
+function parseCSVText(text){
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if(lines.length < 2) return [];
+
+  const delim = lines[0].includes('\t') ? '\t' : ',';
+  function parseLine(line){
+    const res = []; let cur = '', inQ = false;
+    for(let i = 0; i < line.length; i++){
+      if(line[i]==='"'){ inQ=!inQ; }
+      else if(line[i]===delim && !inQ){ res.push(cur.trim()); cur=''; }
+      else { cur+=line[i]; }
+    }
+    res.push(cur.trim());
+    return res;
+  }
+
+  const headers = parseLine(lines[0]).map(h =>
+    h.toLowerCase().replace(/[^a-z0-9]/g,''));
+
+  const FM = {
+    expdate:'expDate',expirationdate:'expDate',
+    clientcode:'clientCode',
+    clientname:'clientName',name:'clientName',
+    producer:'producer',
+    policyline:'policyLine',line:'policyLine',
+    linestatus:'status',status:'status',
+    billmode:'billMode',bill:'billMode',
+    ico:'ico',
+    policy:'policyNo',policynumber:'policyNo',policyno:'policyNo',
+    premium:'premium',estimatedpremium:'premium',
+    polestimatedpremium:'premium',estpremium:'premium',
+  };
+
+  const policies = [];
+  for(let i = 1; i < lines.length; i++){
+    const vals = parseLine(lines[i]);
+    if(vals.length < 3) continue;
+    const obj = {};
+    headers.forEach((h,idx) => { const f=FM[h]; if(f) obj[f]=vals[idx]||''; });
+    if(!obj.expDate && !obj.clientName) continue;
+
+    // Normalise date M/D/YYYY → ISO
+    if(obj.expDate && obj.expDate.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)){
+      const [mo,dy,yr] = obj.expDate.split('/');
+      obj.expDate = `${yr}-${mo.padStart(2,'0')}-${dy.padStart(2,'0')}`;
+    }
+    obj.premium = parseFloat(String(obj.premium||'0').replace(/[$,]/g,'')) || 0;
+    obj.status  = (obj.status||'').toUpperCase();
+    obj.billMode = (obj.billMode||'').toUpperCase();
+
+    policies.push(obj);
+  }
+  return policies;
+}
+
+// ── After parsing ──
+function onParsed(policies, filename){
+  if(!policies.length){
+    setParseStatus('error', '⚠️ No policy rows found. Make sure this is an Applied Epic Expiration Report.');
+    return;
+  }
+  _parsedPolicies = policies;
+  setParseStatus('success', `✓ Found ${policies.length} policies in "${filename}"`);
+  showPreview(policies);
+  document.getElementById('load-mode').style.display = 'block';
+  document.getElementById('load-btn').disabled = false;
+  document.getElementById('modal-footer-note').textContent =
+    `${policies.length} policies ready to load`;
+}
+
+function showPreview(policies){
+  const preview = policies.slice(0, 8);
+  document.getElementById('preview-label').textContent =
+    `Preview — first ${Math.min(8, policies.length)} of ${policies.length} rows`;
+  document.getElementById('preview-body').innerHTML = preview.map(p => `
+    <tr>
+      <td>${fmtDate(p.expDate)}</td>
+      <td>${esc(p.clientName)}</td>
+      <td><span class="line-badge" style="font-size:9px;">${esc(p.policyLine||'—')}</span></td>
+      <td>${p.status||'—'}</td>
+      <td style="font-family:var(--mono);font-size:10px;">${esc(p.policyNo||'—')}</td>
+      <td style="font-family:var(--mono);font-size:10px;">${fmtPrem(p.premium||0)}</td>
+    </tr>`).join('');
+  document.getElementById('preview-wrap').style.display = 'block';
+}
+
+function selectMode(mode){
+  _loadMode = mode;
+  document.getElementById('opt-replace').classList.toggle('selected', mode==='replace');
+  document.getElementById('opt-merge').classList.toggle('selected', mode==='merge');
+}
+
+function confirmLoad(){
+  if(!_parsedPolicies.length) return;
+
+  let finalRaw;
+  if(_loadMode === 'merge'){
+    const existing = JSON.parse(localStorage.getItem(DATA_KEY)||'[]');
+    const existingKeys = new Set(existing.map(p => p.policyNo+'|'+p.expDate));
+    const newOnes = _parsedPolicies.filter(p => !existingKeys.has(p.policyNo+'|'+p.expDate));
+    finalRaw = [...existing, ...newOnes];
+  } else {
+    finalRaw = _parsedPolicies;
+  }
+
+  localStorage.setItem(DATA_KEY, JSON.stringify(finalRaw));
+  const now = new Date();
+  localStorage.setItem(META_KEY, JSON.stringify({
+    filename: _uploadFilename,
+    count: finalRaw.length,
+    loadedAt: (now.getMonth()+1)+'/'+now.getDate()+'/'+now.getFullYear()
+  }));
+
+  POLICIES = finalRaw.map(withDays);
+  closeUploadModal();
+  updateDataBadge();
+  updateSidebarCounts();
+  render();
+  showToast(`✓ ${finalRaw.length} policies loaded from "${_uploadFilename}"`);
+}
+
+function setParseStatus(type, msg){
+  const el = document.getElementById('parse-status');
+  el.className = 'parse-status ' + type;
+  el.textContent = msg;
+}
+
+// ─── Notes ───────────────────────────────────────────────────────────────────
+const NOTES_KEY = 'meridian_policy_notes';
+let activeNotePolicy = null; // policyNo of currently open panel
+
+function loadNotes(){
+  try{ return JSON.parse(localStorage.getItem(NOTES_KEY)||'{}'); }
+  catch(e){ return {}; }
+}
+function saveNotes(data){ localStorage.setItem(NOTES_KEY, JSON.stringify(data)); }
+
+function getNoteCount(policyNo){
+  const data = loadNotes();
+  return (data[policyNo]||[]).length;
+}
+
+function noteBtn(policyNo){
+  const count = getNoteCount(policyNo);
+  const hasCls = count > 0 ? ' has-notes' : '';
+  const countBadge = count > 0 ? `<span class="note-count">${count}</span>` : '＋';
+  return `<button class="note-btn${hasCls}" onclick="openNotes('${esc(policyNo)}')" title="View / add notes">${countBadge}</button>`;
+}
+
+function openNotes(policyNo){
+  activeNotePolicy = policyNo;
+  // Find the policy object for header info
+  const p = POLICIES.find(x => x.policyNo === policyNo);
+  if(p){
+    document.getElementById('np-title').textContent = p.clientName;
+    document.getElementById('np-meta').innerHTML =
+      `<span>${esc(p.policyLine)}</span><span>Policy #${esc(policyNo)}</span><span>Exp: ${fmtDate(p.expDate)}</span>`;
+  }
+  document.getElementById('note-input').value = '';
+  document.getElementById('note-save-btn').disabled = false;
+  renderNotesList(policyNo);
+  document.getElementById('notes-overlay').classList.add('open');
+  document.getElementById('notes-panel').classList.add('open');
+  setTimeout(()=>document.getElementById('note-input').focus(), 260);
+}
+
+function closeNotes(){
+  document.getElementById('notes-overlay').classList.remove('open');
+  document.getElementById('notes-panel').classList.remove('open');
+  activeNotePolicy = null;
+}
+
+function renderNotesList(policyNo){
+  const data  = loadNotes();
+  const notes = (data[policyNo]||[]).slice().reverse(); // newest first
+  const list  = document.getElementById('notes-list');
+  if(!notes.length){
+    list.innerHTML = '<div class="note-empty">No notes yet.<br>Add the first one below.</div>';
+    return;
+  }
+  list.innerHTML = notes.map(n => `
+    <div class="note-item" id="note-${n.id}">
+      <div class="note-text">${esc(n.text)}</div>
+      <div class="note-footer">
+        <span class="note-ts">${fmtTs(n.timestamp)}</span>
+        <button class="note-del" onclick="deleteNote('${esc(policyNo)}','${n.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function saveNote(){
+  const text = document.getElementById('note-input').value.trim();
+  if(!text || !activeNotePolicy) return;
+  const data  = loadNotes();
+  if(!data[activeNotePolicy]) data[activeNotePolicy] = [];
+  data[activeNotePolicy].push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    text,
+    timestamp: new Date().toISOString()
+  });
+  saveNotes(data);
+  document.getElementById('note-input').value = '';
+  renderNotesList(activeNotePolicy);
+  render(); // refresh table so note count badge updates
+  showToast('Note saved ✓');
+}
+
+function deleteNote(policyNo, noteId){
+  const data = loadNotes();
+  if(data[policyNo]) data[policyNo] = data[policyNo].filter(n => n.id !== noteId);
+  saveNotes(data);
+  renderNotesList(policyNo);
+  render();
+}
+
+function fmtTs(iso){
+  const d = new Date(iso);
+  return (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+
+    d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+}
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+let _toastTimer;
+function showToast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+// Keyboard: Escape closes panel, Ctrl+Enter saves note
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape' && activeNotePolicy) closeNotes();
+  if((e.ctrlKey||e.metaKey) && e.key==='Enter' && activeNotePolicy) saveNote();
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+updateDataBadge();
+updateSidebarCounts();
+render();
+</script>
+</body>
+</html>
