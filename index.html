@@ -800,8 +800,8 @@ footer{
               <th onclick="sortBy('ico')">ICO <span class="sort-icon" id="si-ico">↕</span></th>
               <th onclick="sortBy('policyNo')">Policy # <span class="sort-icon" id="si-policyNo">↕</span></th>
               <th onclick="sortBy('premium')" style="text-align:right;">Est. Premium <span class="sort-icon" id="si-premium">↕</span></th>
-              <th style="cursor:default;width:80px;text-align:center;">Notes</th>
               <th onclick="sortBy('workflow')" style="text-align:center;">Status <span class="sort-icon" id="si-workflow">↕</span></th>
+              <th style="cursor:default;width:80px;text-align:center;">Notes</th>
             </tr>
           </thead>
           <tbody id="table-body"></tbody>
@@ -1090,8 +1090,8 @@ function renderTable(data){
       <td><span class="ico-text">${esc(p.ico)}</span></td>
       <td><span class="policy-no">${esc(p.policyNo)}</span></td>
       <td class="${pClass}">${fmtPrem(p.premium)}</td>
-      <td style="text-align:center;">${noteBtn(p.policyNo)}</td>
       <td style="text-align:center;">${wfSelect(p.policyNo, p.workflow)}</td>
+      <td style="text-align:center;">${noteBtn(p.policyNo)}</td>
     </tr>`;
   }).join('');
 }
