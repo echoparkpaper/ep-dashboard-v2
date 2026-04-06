@@ -326,6 +326,39 @@ tr.row-soon:hover td{background:rgba(186,117,23,0.07);}
 .wf-in-progress{background:#E07A5F;color:#fff;border-color:#E07A5F;}
 .wf-done{background:#1D9E75;color:#fff;border-color:#1D9E75;}
 
+/* ── Row fade-out ── */
+@keyframes rowFadeOut{
+  0%{opacity:1;transform:translateX(0);}
+  100%{opacity:0;transform:translateX(20px);}
+}
+.row-fade-out{animation:rowFadeOut 0.45s ease forwards;pointer-events:none;}
+
+/* ── View Done button ── */
+.done-toggle-btn{
+  background:#1D9E75;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  padding:5px 12px;
+  font-size:11px;
+  font-family:var(--sans);
+  font-weight:500;
+  cursor:pointer;
+  transition:all 0.15s;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+}
+.done-toggle-btn:hover{opacity:0.85;}
+.done-toggle-btn .done-count{
+  background:rgba(255,255,255,0.3);
+  border-radius:8px;
+  font-size:9px;
+  font-family:var(--mono);
+  padding:0 6px;
+  line-height:16px;
+}
+
 /* ── Note button on rows ── */
 .note-btn{
   display:inline-flex;
@@ -779,6 +812,7 @@ footer{
         <button class="filter-btn active" onclick="setBillMode('all')" id="bm-all">All</button>
         <button class="filter-btn" onclick="setBillMode('D')" id="bm-D">Direct Bill</button>
         <button class="filter-btn" onclick="setBillMode('A')" id="bm-A">Agency Bill</button>
+        <button class="done-toggle-btn" id="done-toggle-btn" onclick="toggleDoneView()" style="display:none;">View Done <span class="done-count" id="done-count">0</span></button>
       </div>
     </div>
 
@@ -994,6 +1028,14 @@ function getFiltered(){
   }
 
   if(billFilter!=='all') data=data.filter(p=>p.billMode===billFilter);
+
+  // Workflow: show only done or hide done
+  const wfData = loadWorkflow();
+  if(showingDone){
+    data = data.filter(p => wfData[p.policyNo] === 'Done');
+  } else {
+    data = data.filter(p => wfData[p.policyNo] !== 'Done');
+  }
 
   if(searchQuery){
     const q=searchQuery.toLowerCase();
@@ -1551,11 +1593,47 @@ function wfSelect(policyNo, current){
   return `<select class="wf-select ${cls}" onchange="setWorkflow('${esc(policyNo)}',this)">${opts}</select>`;
 }
 
+let showingDone = false;
+
 function setWorkflow(policyNo, el){
   const data = loadWorkflow();
   data[policyNo] = el.value;
   saveWorkflow(data);
   el.className = 'wf-select ' + (WF_CLASSES[el.value]||'wf-not-started');
+  if(el.value === 'Done' && !showingDone){
+    const row = el.closest('tr');
+    if(row){
+      row.classList.add('row-fade-out');
+      row.addEventListener('animationend', ()=>{ render(); updateDoneBtn(); });
+    }
+  } else {
+    updateDoneBtn();
+    if(showingDone) render();
+  }
+}
+
+function getDoneCount(){
+  const wf = loadWorkflow();
+  return Object.values(wf).filter(v => v === 'Done').length;
+}
+
+function updateDoneBtn(){
+  const count = getDoneCount();
+  const btn = document.getElementById('done-toggle-btn');
+  btn.style.display = count > 0 ? 'inline-flex' : 'none';
+  document.getElementById('done-count').textContent = count;
+  if(showingDone){
+    btn.textContent = '';
+    btn.innerHTML = 'Hide Done <span class="done-count">' + count + '</span>';
+  } else {
+    btn.innerHTML = 'View Done <span class="done-count">' + count + '</span>';
+  }
+}
+
+function toggleDoneView(){
+  showingDone = !showingDone;
+  updateDoneBtn();
+  render();
 }
 
 // ─── Notes ───────────────────────────────────────────────────────────────────
@@ -1672,6 +1750,7 @@ document.addEventListener('keydown', e => {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 updateDataBadge();
 updateSidebarCounts();
+updateDoneBtn();
 render();
 </script>
 </body>
