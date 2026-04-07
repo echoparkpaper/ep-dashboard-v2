@@ -1935,16 +1935,24 @@ function toggleDoneView(){
 }
 
 function restoreBtn(policyNo){
-  return `<button class="restore-btn" onclick="restorePolicy('${safeAttr(policyNo)}')">↩ Restore</button>`;
+  return `<button class="restore-btn" onclick="restorePolicy('${safeAttr(policyNo)}', this)">↩ Restore</button>`;
 }
 
-function restorePolicy(policyNo){
-  const data = loadWorkflow();
-  data[policyNo] = 'Not Started';
-  saveWorkflow(data);
-  updateDoneBtn();
-  updateSidebarCounts();
-  render();
+function restorePolicy(policyNo, btn){
+  saveWorkflowToServer(policyNo, 'Not Started');
+  const row = btn ? btn.closest('tr') : null;
+  if(row){
+    row.classList.add('row-fade-out');
+    row.addEventListener('animationend', ()=>{
+      updateDoneBtn();
+      updateSidebarCounts();
+      render();
+    });
+  } else {
+    updateDoneBtn();
+    updateSidebarCounts();
+    render();
+  }
 }
 
 // ─── Notes ───────────────────────────────────────────────────────────────────
