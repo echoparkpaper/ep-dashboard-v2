@@ -1163,7 +1163,8 @@ function render(){
 }
 
 function renderCards(data){
-  const all      = POLICIES;
+  const wfData   = loadWorkflow();
+  const all      = POLICIES.filter(p => wfData[p.policyNo] !== 'Done');
   const overdue  = all.filter(p=>p.days<0).length;
   const soon30   = all.filter(p=>p.days>=0&&p.days<=30).length;
   const showing  = data.length;
@@ -1249,7 +1250,8 @@ function updateSortIcons(){
 }
 
 function updateSidebarCounts(){
-  const all=POLICIES;
+  const wfData=loadWorkflow();
+  const all=POLICIES.filter(p => wfData[p.policyNo] !== 'Done');
   document.getElementById('cnt-all').textContent=all.length;
   document.getElementById('cnt-overdue').textContent=all.filter(p=>p.days<0).length;
   document.getElementById('cnt-30').textContent=all.filter(p=>p.days>=0&&p.days<=30).length;
