@@ -1418,6 +1418,10 @@ const VIEW_TITLES={
 };
 
 function goHome(){
+  if(currentView === 'all' && !showingDone && billFilter === 'all' && !searchQuery){
+    window.location.reload();
+    return;
+  }
   showingDone = false;
   billFilter = 'all';
   searchQuery = '';
