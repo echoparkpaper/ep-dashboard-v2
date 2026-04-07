@@ -1139,7 +1139,26 @@ async function loadServerData(){
     serverPriority = res.priority || {};
     serverManualPri = res.manualPri || {};
     serverNotes = res.notes || {};
+    // Load per-user policy data
+    if(res.policies && res.policies.length > 0){
+      localStorage.setItem(DATA_KEY, JSON.stringify(res.policies));
+      if(res.meta) localStorage.setItem(META_KEY, JSON.stringify(res.meta));
+      POLICIES = res.policies.map(withDays);
+    } else {
+      // New user — clear any leftover data from previous user on this browser
+      localStorage.removeItem(DATA_KEY);
+      localStorage.removeItem(META_KEY);
+      POLICIES = [];
+    }
   }
+}
+
+function savePoliciesPerUser(policies, meta){
+  miApi('PUT','/api/policies',{ policies, meta });
+}
+
+function clearPoliciesPerUser(){
+  miApi('DELETE','/api/policies');
 }
 
 // Override localStorage functions to use server cache
@@ -1458,7 +1477,10 @@ function clearAllData(){
   if(!confirm('Clear all policy data? This cannot be undone.'))return;
   localStorage.removeItem(DATA_KEY);
   localStorage.removeItem(META_KEY);
+  clearPoliciesPerUser();
   POLICIES=[];
+  updateDataBadge();
+  updateSidebarCounts();
   render();
   showToast('All data cleared');
 }
@@ -1790,11 +1812,15 @@ function confirmLoad(){
 
   localStorage.setItem(DATA_KEY, JSON.stringify(finalRaw));
   const now = new Date();
-  localStorage.setItem(META_KEY, JSON.stringify({
+  const metaObj = {
     filename: _uploadFilename,
     count: finalRaw.length,
     loadedAt: (now.getMonth()+1)+'/'+now.getDate()+'/'+now.getFullYear()
-  }));
+  };
+  localStorage.setItem(META_KEY, JSON.stringify(metaObj));
+
+  // Save to server per-user
+  savePoliciesPerUser(finalRaw, metaObj);
 
   POLICIES = finalRaw.map(withDays);
   closeUploadModal();
