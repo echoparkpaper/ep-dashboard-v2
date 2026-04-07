@@ -827,7 +827,7 @@ footer{
         <button class="filter-btn active" onclick="setBillMode('all')" id="bm-all">All</button>
         <button class="filter-btn" onclick="setBillMode('D')" id="bm-D">Direct Bill</button>
         <button class="filter-btn" onclick="setBillMode('A')" id="bm-A">Agency Bill</button>
-        <button class="done-toggle-btn" id="done-toggle-btn" onclick="toggleDoneView()" style="display:none;">View Done <span class="done-count" id="done-count">0</span></button>
+        <button class="done-toggle-btn" id="done-toggle-btn" onclick="toggleDoneView()" style="display:none;"><span id="done-label">View Done</span> <span class="done-count" id="done-count">0</span></button>
       </div>
     </div>
 
@@ -1601,11 +1601,13 @@ const WF_CLASSES = {'Not Started':'wf-not-started', 'In Progress':'wf-in-progres
 function loadWorkflow(){ try{ return JSON.parse(localStorage.getItem(WF_KEY)||'{}'); }catch(e){ return {}; } }
 function saveWorkflow(data){ localStorage.setItem(WF_KEY, JSON.stringify(data)); }
 
+function safeAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
 function wfSelect(policyNo, current){
   const val = loadWorkflow()[policyNo] || current || 'Not Started';
   const cls = WF_CLASSES[val]||'wf-not-started';
   const opts = WF_OPTIONS.map(o => `<option value="${o}"${o===val?' selected':''}>${o}</option>`).join('');
-  return `<select class="wf-select ${cls}" onchange="setWorkflow('${esc(policyNo)}',this)">${opts}</select>`;
+  return `<select class="wf-select ${cls}" onchange="setWorkflow('${safeAttr(policyNo)}',this)">${opts}</select>`;
 }
 
 let showingDone = false;
@@ -1637,14 +1639,16 @@ function getDoneCount(){
 function updateDoneBtn(){
   const count = getDoneCount();
   const btn = document.getElementById('done-toggle-btn');
+  const label = document.getElementById('done-label');
+  const countEl = document.getElementById('done-count');
   btn.style.display = count > 0 || showingDone ? 'inline-flex' : 'none';
-  document.getElementById('done-count').textContent = count;
+  countEl.textContent = count;
   if(showingDone){
     btn.style.background = 'var(--accent)';
-    btn.innerHTML = '← Back to Active <span class="done-count">' + count + '</span>';
+    label.textContent = '← Back to Active';
   } else {
     btn.style.background = '#1D9E75';
-    btn.innerHTML = 'View Done <span class="done-count">' + count + '</span>';
+    label.textContent = 'View Done';
   }
 }
 
@@ -1661,7 +1665,7 @@ function toggleDoneView(){
 }
 
 function restoreBtn(policyNo){
-  return `<button class="restore-btn" onclick="restorePolicy('${esc(policyNo)}')">↩ Restore</button>`;
+  return `<button class="restore-btn" onclick="restorePolicy('${safeAttr(policyNo)}')">↩ Restore</button>`;
 }
 
 function restorePolicy(policyNo){
