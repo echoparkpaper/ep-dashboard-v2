@@ -67,15 +67,6 @@ header{
 }
 .search-box::placeholder{color:rgba(255,255,255,0.4);}
 .search-box:focus{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);}
-.data-badge{
-  font-size:10px;
-  font-family:var(--mono);
-  color:rgba(168,196,224,0.8);
-  background:rgba(255,255,255,0.07);
-  border:1px solid rgba(255,255,255,0.12);
-  border-radius:5px;
-  padding:4px 10px;
-}
 
 /* ── Body layout ── */
 .body-wrap{display:flex;flex:1;min-height:0;}
@@ -761,7 +752,6 @@ footer{
   .logo-sub{display:none;}
   .header-right{gap:8px;}
   .search-box{width:160px;font-size:11px;}
-  .data-badge{display:none;}
   .view-header{padding:10px 12px 8px;flex-wrap:wrap;gap:8px;}
   .view-actions{flex-wrap:wrap;}
   .summary-row{padding:10px 12px;gap:6px;flex-wrap:wrap;}
@@ -818,13 +808,12 @@ footer{
     <div class="logo-sub">Policy Expiration Tracker</div>
   </div>
   <div class="header-right">
-    <div class="data-badge" id="data-badge">📄 Report: 4/1/2026 · Page 1 of 2</div>
     <div class="search-wrap">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input class="search-box" type="text" placeholder="Search client, policy #, line…" oninput="onSearch(this.value)" id="search-input">
     </div>
     <a href="admin.html" id="admin-link" style="display:none;color:rgba(168,196,224,0.8);font-size:10px;font-family:var(--mono);text-decoration:none;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:5px;">Admin</a>
-    <span id="user-name" style="color:#a8c4e0;font-size:10px;font-family:var(--mono);"></span>
+    <span id="user-name" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;font-family:var(--sans);padding:6px 12px;border-radius:7px;"></span>
     <button id="logout-btn" onclick="doLogout()" style="display:none;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-family:var(--sans);padding:4px 10px;border-radius:5px;cursor:pointer;">Sign Out</button>
   </div>
 </header>
@@ -1131,7 +1120,7 @@ function doLogout(){
 
 function showDashboard(){
   document.getElementById('login-wrap').style.display='none';
-  document.getElementById('user-name').textContent = MI_USER.name;
+  document.getElementById('user-name').textContent = MI_USER.name.split(' ')[0];
   document.getElementById('logout-btn').style.display = '';
   if(MI_USER.role === 'admin') document.getElementById('admin-link').style.display = '';
   updateSidebarCounts();
@@ -1231,18 +1220,7 @@ function loadStoredPolicies(){
 
 let POLICIES = loadStoredPolicies();
 
-function updateDataBadge(){
-  const meta = getDataMeta();
-  const badge = document.getElementById('data-badge');
-  if(!badge) return;
-  if(meta && POLICIES.length > 0){
-    badge.textContent = `📄 ${meta.filename} · ${meta.count} policies · ${meta.loadedAt}`;
-    badge.style.display = '';
-  } else {
-    badge.textContent = '';
-    badge.style.display = 'none';
-  }
-}
+function updateDataBadge(){}
 
 function getDataMeta(){
   try{ return JSON.parse(localStorage.getItem(META_KEY)||'null'); }catch(e){ return null; }
