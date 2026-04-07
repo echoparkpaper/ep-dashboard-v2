@@ -31,7 +31,7 @@
   --sidebar-w:230px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;zoom:1.1;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;}
 
 /* ── Header ── */
 header{
@@ -728,6 +728,55 @@ footer{
   flex-shrink:0;
 }
 .footer-copy{font-family:var(--mono);font-size:9px;color:var(--muted);}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+/* Tablet / medium screens */
+@media(max-width:1100px){
+  .sidebar{width:180px;}
+  th,td{padding:8px 10px;font-size:10px;}
+  .card-value{font-size:20px;}
+  .summary-row{padding:12px 16px;gap:8px;}
+  .table-wrap-outer{padding:0 16px 16px;}
+  header{padding:0 16px;}
+  .view-header{padding:12px 16px 10px;}
+}
+
+/* Small tablet / large phone */
+@media(max-width:860px){
+  .sidebar{display:none;}
+  header{padding:0 12px;}
+  .logo-sub{display:none;}
+  .header-right{gap:8px;}
+  .search-box{width:160px;font-size:11px;}
+  .data-badge{display:none;}
+  .view-header{padding:10px 12px 8px;flex-wrap:wrap;gap:8px;}
+  .view-actions{flex-wrap:wrap;}
+  .summary-row{padding:10px 12px;gap:6px;flex-wrap:wrap;}
+  .card{min-width:110px;padding:12px 14px;}
+  .card-value{font-size:18px;}
+  .table-wrap-outer{padding:0 12px 12px;}
+  th,td{padding:7px 8px;font-size:9.5px;}
+}
+
+/* Phone */
+@media(max-width:600px){
+  header{height:46px;}
+  .logo{font-size:1rem;}
+  .search-box{width:120px;padding:5px 10px 5px 26px;font-size:10px;}
+  .filter-btn{padding:4px 8px;font-size:10px;}
+  .done-toggle-btn{padding:4px 8px;font-size:10px;}
+  .summary-row{flex-direction:column;}
+  .card{min-width:unset;}
+  .card-value{font-size:16px;}
+  .view-title{font-size:0.95rem;}
+  th,td{padding:6px 6px;font-size:9px;}
+  .client-name{font-size:11px;}
+  .client-code{font-size:8px;}
+  .pri-select,.wf-select{font-size:9px;padding:2px 16px 2px 5px;min-width:unset;}
+  .restore-btn{font-size:9px;padding:3px 6px;}
+  .note-btn{font-size:9px;padding:2px 6px;}
+}
 </style>
 </head>
 <body>
