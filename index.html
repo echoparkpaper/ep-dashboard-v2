@@ -1178,7 +1178,7 @@ function renderTable(data){
       <td><span class="ico-text">${esc(p.ico)}</span></td>
       <td><span class="policy-no">${esc(p.policyNo)}</span></td>
       <td class="${pClass}">${fmtPrem(p.premium)}</td>
-      <td style="text-align:center;">${priSelect(p.policyNo)}</td>
+      <td style="text-align:center;">${priSelect(p.policyNo, p.days)}</td>
       <td style="text-align:center;">${showingDone ? restoreBtn(p.policyNo) : wfSelect(p.policyNo, p.workflow)}</td>
       <td style="text-align:center;">${noteBtn(p.policyNo)}</td>
     </tr>`;
@@ -1627,14 +1627,32 @@ function setParseStatus(type, msg){
 
 // ─── Priority ────────────────────────────────────────────────────────────────
 const PRI_KEY = 'meridian_priority';
+const PRI_MANUAL_KEY = 'meridian_priority_manual';
 const PRI_OPTIONS = ['No Worries','Today','High','Critical'];
 const PRI_CLASSES = {'Critical':'pri-critical','High':'pri-high','Today':'pri-today','No Worries':'pri-no-worries'};
 
 function loadPriority(){ try{ return JSON.parse(localStorage.getItem(PRI_KEY)||'{}'); }catch(e){ return {}; } }
 function savePriority(data){ localStorage.setItem(PRI_KEY, JSON.stringify(data)); }
+function loadManualPri(){ try{ return JSON.parse(localStorage.getItem(PRI_MANUAL_KEY)||'{}'); }catch(e){ return {}; } }
+function saveManualPri(data){ localStorage.setItem(PRI_MANUAL_KEY, JSON.stringify(data)); }
 
-function priSelect(policyNo){
-  const val = loadPriority()[policyNo] || 'No Worries';
+function autoPriority(days){
+  if(days <= 5) return 'Today';
+  if(days <= 15) return 'Critical';
+  if(days <= 30) return 'High';
+  return 'No Worries';
+}
+
+function getPriority(policyNo, days){
+  const manual = loadManualPri();
+  if(manual[policyNo]) return loadPriority()[policyNo] || autoPriority(days);
+  return autoPriority(days);
+}
+
+function priSelect(policyNo, days){
+  const val = getPriority(policyNo, days);
+  // Persist auto value so sorting works
+  const data = loadPriority(); data[policyNo] = val; savePriority(data);
   const cls = PRI_CLASSES[val]||'pri-no-worries';
   const opts = PRI_OPTIONS.map(o => `<option value="${o}"${o===val?' selected':''}>${o}</option>`).join('');
   return `<select class="pri-select ${cls}" onchange="setPriority('${safeAttr(policyNo)}',this)">${opts}</select>`;
@@ -1644,6 +1662,9 @@ function setPriority(policyNo, el){
   const data = loadPriority();
   data[policyNo] = el.value;
   savePriority(data);
+  const manual = loadManualPri();
+  manual[policyNo] = true;
+  saveManualPri(manual);
   el.className = 'pri-select ' + (PRI_CLASSES[el.value]||'pri-no-worries');
 }
 
