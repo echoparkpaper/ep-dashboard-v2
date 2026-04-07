@@ -358,6 +358,22 @@ tr.row-soon:hover td{background:rgba(186,117,23,0.07);}
   line-height:16px;
 }
 
+/* ── Restore button ── */
+.restore-btn{
+  background:var(--accent-light);
+  color:var(--accent);
+  border:1px solid rgba(44,82,130,0.25);
+  border-radius:6px;
+  padding:4px 10px;
+  font-size:10.5px;
+  font-family:var(--sans);
+  font-weight:500;
+  cursor:pointer;
+  transition:all 0.15s;
+  white-space:nowrap;
+}
+.restore-btn:hover{background:var(--accent);color:#fff;}
+
 /* ── Note button on rows ── */
 .note-btn{
   display:inline-flex;
@@ -1131,7 +1147,7 @@ function renderTable(data){
       <td><span class="ico-text">${esc(p.ico)}</span></td>
       <td><span class="policy-no">${esc(p.policyNo)}</span></td>
       <td class="${pClass}">${fmtPrem(p.premium)}</td>
-      <td style="text-align:center;">${wfSelect(p.policyNo, p.workflow)}</td>
+      <td style="text-align:center;">${showingDone ? restoreBtn(p.policyNo) : wfSelect(p.policyNo, p.workflow)}</td>
       <td style="text-align:center;">${noteBtn(p.policyNo)}</td>
     </tr>`;
   }).join('');
@@ -1603,28 +1619,31 @@ function setWorkflow(policyNo, el){
     const row = el.closest('tr');
     if(row){
       row.classList.add('row-fade-out');
-      row.addEventListener('animationend', ()=>{ render(); updateDoneBtn(); });
+      row.addEventListener('animationend', ()=>{ render(); updateDoneBtn(); updateSidebarCounts(); });
     }
   } else {
     updateDoneBtn();
+    updateSidebarCounts();
     if(showingDone) render();
   }
 }
 
 function getDoneCount(){
   const wf = loadWorkflow();
-  return Object.values(wf).filter(v => v === 'Done').length;
+  const policyNos = new Set(POLICIES.map(p => p.policyNo));
+  return Object.entries(wf).filter(([k,v]) => v === 'Done' && policyNos.has(k)).length;
 }
 
 function updateDoneBtn(){
   const count = getDoneCount();
   const btn = document.getElementById('done-toggle-btn');
-  btn.style.display = count > 0 ? 'inline-flex' : 'none';
+  btn.style.display = count > 0 || showingDone ? 'inline-flex' : 'none';
   document.getElementById('done-count').textContent = count;
   if(showingDone){
-    btn.textContent = '';
-    btn.innerHTML = 'Hide Done <span class="done-count">' + count + '</span>';
+    btn.style.background = 'var(--accent)';
+    btn.innerHTML = '← Back to Active <span class="done-count">' + count + '</span>';
   } else {
+    btn.style.background = '#1D9E75';
     btn.innerHTML = 'View Done <span class="done-count">' + count + '</span>';
   }
 }
@@ -1632,6 +1651,25 @@ function updateDoneBtn(){
 function toggleDoneView(){
   showingDone = !showingDone;
   updateDoneBtn();
+  if(showingDone){
+    document.getElementById('view-title').innerHTML = 'Completed Policies<span id="view-sub"></span>';
+  } else {
+    const title = VIEW_TITLES[currentView] || currentView;
+    document.getElementById('view-title').innerHTML = title + '<span id="view-sub"></span>';
+  }
+  render();
+}
+
+function restoreBtn(policyNo){
+  return `<button class="restore-btn" onclick="restorePolicy('${esc(policyNo)}')">↩ Restore</button>`;
+}
+
+function restorePolicy(policyNo){
+  const data = loadWorkflow();
+  data[policyNo] = 'Not Started';
+  saveWorkflow(data);
+  updateDoneBtn();
+  updateSidebarCounts();
   render();
 }
 
