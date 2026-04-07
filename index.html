@@ -699,6 +699,18 @@ tr.row-soon:hover td{background:rgba(186,117,23,0.07);}
 .clear-data-btn{width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all 0.15s;margin-top:6px;}
 .clear-data-btn:hover{background:#fef2f2;color:#c0392b;border-color:#f5c6c6;}
 
+/* ── Login ── */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);position:fixed;inset:0;z-index:500;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px;width:360px;box-shadow:0 12px 40px rgba(0,0,0,0.08);}
+.login-logo{font-family:var(--serif);font-size:22px;color:var(--header);margin-bottom:4px;}
+.login-sub{font-size:11px;color:var(--muted);margin-bottom:24px;font-family:var(--mono);}
+.login-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;}
+.login-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;font-family:var(--sans);color:var(--text);outline:none;margin-bottom:12px;}
+.login-input:focus{border-color:var(--accent);}
+.login-btn{width:100%;background:var(--accent);border:none;border-radius:7px;padding:10px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;transition:background 0.15s;margin-top:4px;}
+.login-btn:hover{background:#1e3a5f;}
+.login-err{font-size:11px;color:var(--red);margin-top:8px;min-height:16px;}
+
 /* ── Toast ── */
 .toast{
   position:fixed;
@@ -781,6 +793,20 @@ footer{
 </head>
 <body>
 
+<!-- Login Screen -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">Meridian Insurance</div>
+    <div class="login-sub">Policy Expiration Tracker</div>
+    <div class="login-label">Email</div>
+    <input class="login-input" id="login-email" type="email" placeholder="you@meridianins.com">
+    <div class="login-label">Password</div>
+    <input class="login-input" id="login-password" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
 <!-- Header -->
 <header>
   <div style="display:flex;align-items:baseline;gap:0;">
@@ -793,6 +819,9 @@ footer{
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input class="search-box" type="text" placeholder="Search client, policy #, line…" oninput="onSearch(this.value)" id="search-input">
     </div>
+    <a href="admin.html" id="admin-link" style="display:none;color:rgba(168,196,224,0.8);font-size:10px;font-family:var(--mono);text-decoration:none;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:5px;">Admin</a>
+    <span id="user-name" style="color:#a8c4e0;font-size:10px;font-family:var(--mono);"></span>
+    <button id="logout-btn" onclick="doLogout()" style="display:none;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-family:var(--sans);padding:4px 10px;border-radius:5px;cursor:pointer;">Sign Out</button>
   </div>
 </header>
 
@@ -1036,6 +1065,108 @@ footer{
 <div class="toast" id="toast"></div>
 
 <script>
+// ─── API & Auth ──────────────────────────────────────────────────────────────
+const API_URL = 'https://ep-dashboard-v2-backend.onrender.com';
+let MI_TOKEN = localStorage.getItem('mi_jwt');
+let MI_USER = null;
+
+// In-memory cache from server
+let serverWorkflow = {};
+let serverPriority = {};
+let serverManualPri = {};
+let serverNotes = {};
+
+function miApi(method, path, body){
+  const opts = { method, headers: { 'Content-Type':'application/json' } };
+  if(MI_TOKEN) opts.headers['Authorization'] = 'Bearer ' + MI_TOKEN;
+  if(body) opts.body = JSON.stringify(body);
+  return fetch(API_URL + path, opts).then(r => r.json()).catch(e => ({ error: 'Network error' }));
+}
+
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-password').value;
+  const err = document.getElementById('login-err');
+  if(!email||!pw){ err.textContent='Email and password required'; return; }
+  err.textContent='Signing in...';
+  const res = await miApi('POST','/api/auth/login',{email,password:pw});
+  if(res.error){ err.textContent=res.error; return; }
+  MI_TOKEN = res.token;
+  MI_USER = res.user;
+  localStorage.setItem('mi_jwt', MI_TOKEN);
+  await loadServerData();
+  showDashboard();
+}
+
+async function checkAuth(){
+  if(!MI_TOKEN){ return; }
+  const res = await miApi('GET','/api/auth/me');
+  if(res.user){
+    MI_USER = res.user;
+    await loadServerData();
+    showDashboard();
+  } else {
+    localStorage.removeItem('mi_jwt');
+    MI_TOKEN = null;
+  }
+}
+
+function doLogout(){
+  localStorage.removeItem('mi_jwt');
+  MI_TOKEN = null;
+  MI_USER = null;
+  document.getElementById('login-wrap').style.display='flex';
+}
+
+function showDashboard(){
+  document.getElementById('login-wrap').style.display='none';
+  document.getElementById('user-name').textContent = MI_USER.name;
+  document.getElementById('logout-btn').style.display = '';
+  if(MI_USER.role === 'admin') document.getElementById('admin-link').style.display = '';
+  updateSidebarCounts();
+  updateDoneBtn();
+  render();
+}
+
+async function loadServerData(){
+  const res = await miApi('GET','/api/data');
+  if(!res.error){
+    serverWorkflow = res.workflow || {};
+    serverPriority = res.priority || {};
+    serverManualPri = res.manualPri || {};
+    serverNotes = res.notes || {};
+  }
+}
+
+// Override localStorage functions to use server cache
+function loadWorkflow(){ return serverWorkflow; }
+function saveWorkflowToServer(policyNo, status){
+  serverWorkflow[policyNo] = status;
+  miApi('PUT','/api/workflow',{policyNo, status});
+}
+function loadPriority(){ return serverPriority; }
+function savePriorityToServer(policyNo, priority, isManual){
+  serverPriority[policyNo] = priority;
+  if(isManual) serverManualPri[policyNo] = true;
+  miApi('PUT','/api/priority',{policyNo, priority, isManual});
+}
+function loadManualPri(){ return serverManualPri; }
+function loadNotes(){ return serverNotes; }
+async function addNoteToServer(policyNo, text){
+  const res = await miApi('POST','/api/notes',{policyNo, text});
+  if(!res.error){
+    if(!serverNotes[policyNo]) serverNotes[policyNo] = [];
+    serverNotes[policyNo].unshift({ id: res.id, text, createdAt: res.createdAt });
+  }
+  return res;
+}
+async function deleteNoteFromServer(noteId, policyNo){
+  await miApi('DELETE','/api/notes/'+noteId);
+  if(serverNotes[policyNo]){
+    serverNotes[policyNo] = serverNotes[policyNo].filter(n => n.id !== noteId);
+  }
+}
+
 // ─── Data ────────────────────────────────────────────────────────────────────
 // Source: Applied Epic Expiration Report · 4/1/2026 · Producer: COOKNA (Nathanael Cook)
 // Page 1 of 2 — Page 2 to be added
@@ -1054,8 +1185,8 @@ const META_KEY = 'meridian_data_meta';
 
 function withDays(raw){
   const exp = new Date(raw.expDate); exp.setHours(0,0,0,0);
-  const wf = (JSON.parse(localStorage.getItem('meridian_workflow_status')||'{}'))[raw.policyNo] || 'Not Started';
-  const pri = (JSON.parse(localStorage.getItem('meridian_priority')||'{}'))[raw.policyNo] || 'No Worries';
+  const wf = serverWorkflow[raw.policyNo] || 'Not Started';
+  const pri = serverPriority[raw.policyNo] || 'No Worries';
   return {...raw, days: Math.round((exp - TODAY) / 86400000), workflow: wf, priority: pri};
 }
 
@@ -1676,15 +1807,8 @@ function setParseStatus(type, msg){
 }
 
 // ─── Priority ────────────────────────────────────────────────────────────────
-const PRI_KEY = 'meridian_priority';
-const PRI_MANUAL_KEY = 'meridian_priority_manual';
 const PRI_OPTIONS = ['No Worries','Today','High','Critical'];
 const PRI_CLASSES = {'Critical':'pri-critical','High':'pri-high','Today':'pri-today','No Worries':'pri-no-worries'};
-
-function loadPriority(){ try{ return JSON.parse(localStorage.getItem(PRI_KEY)||'{}'); }catch(e){ return {}; } }
-function savePriority(data){ localStorage.setItem(PRI_KEY, JSON.stringify(data)); }
-function loadManualPri(){ try{ return JSON.parse(localStorage.getItem(PRI_MANUAL_KEY)||'{}'); }catch(e){ return {}; } }
-function saveManualPri(data){ localStorage.setItem(PRI_MANUAL_KEY, JSON.stringify(data)); }
 
 function autoPriority(days){
   if(days <= 5) return 'Today';
@@ -1701,30 +1825,20 @@ function getPriority(policyNo, days){
 
 function priSelect(policyNo, days){
   const val = getPriority(policyNo, days);
-  // Persist auto value so sorting works
-  const data = loadPriority(); data[policyNo] = val; savePriority(data);
+  serverPriority[policyNo] = val;
   const cls = PRI_CLASSES[val]||'pri-no-worries';
   const opts = PRI_OPTIONS.map(o => `<option value="${o}"${o===val?' selected':''}>${o}</option>`).join('');
   return `<select class="pri-select ${cls}" onchange="setPriority('${safeAttr(policyNo)}',this)">${opts}</select>`;
 }
 
 function setPriority(policyNo, el){
-  const data = loadPriority();
-  data[policyNo] = el.value;
-  savePriority(data);
-  const manual = loadManualPri();
-  manual[policyNo] = true;
-  saveManualPri(manual);
+  savePriorityToServer(policyNo, el.value, true);
   el.className = 'pri-select ' + (PRI_CLASSES[el.value]||'pri-no-worries');
 }
 
 // ─── Workflow Status ─────────────────────────────────────────────────────────
-const WF_KEY = 'meridian_workflow_status';
 const WF_OPTIONS = ['Not Started','In Progress','Done'];
 const WF_CLASSES = {'Not Started':'wf-not-started', 'In Progress':'wf-in-progress', 'Done':'wf-done'};
-
-function loadWorkflow(){ try{ return JSON.parse(localStorage.getItem(WF_KEY)||'{}'); }catch(e){ return {}; } }
-function saveWorkflow(data){ localStorage.setItem(WF_KEY, JSON.stringify(data)); }
 
 function safeAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -1738,9 +1852,7 @@ function wfSelect(policyNo, current){
 let showingDone = false;
 
 function setWorkflow(policyNo, el){
-  const data = loadWorkflow();
-  data[policyNo] = el.value;
-  saveWorkflow(data);
+  saveWorkflowToServer(policyNo, el.value);
   el.className = 'wf-select ' + (WF_CLASSES[el.value]||'wf-not-started');
   if(el.value === 'Done' && !showingDone){
     const row = el.closest('tr');
@@ -1803,14 +1915,7 @@ function restorePolicy(policyNo){
 }
 
 // ─── Notes ───────────────────────────────────────────────────────────────────
-const NOTES_KEY = 'meridian_policy_notes';
-let activeNotePolicy = null; // policyNo of currently open panel
-
-function loadNotes(){
-  try{ return JSON.parse(localStorage.getItem(NOTES_KEY)||'{}'); }
-  catch(e){ return {}; }
-}
-function saveNotes(data){ localStorage.setItem(NOTES_KEY, JSON.stringify(data)); }
+let activeNotePolicy = null;
 
 function getNoteCount(policyNo){
   const data = loadNotes();
@@ -1849,7 +1954,7 @@ function closeNotes(){
 
 function renderNotesList(policyNo){
   const data  = loadNotes();
-  const notes = (data[policyNo]||[]).slice().reverse(); // newest first
+  const notes = data[policyNo]||[]; // already newest first from server
   const list  = document.getElementById('notes-list');
   if(!notes.length){
     list.innerHTML = '<div class="note-empty">No notes yet.<br>Add the first one below.</div>';
@@ -1859,34 +1964,25 @@ function renderNotesList(policyNo){
     <div class="note-item" id="note-${n.id}">
       <div class="note-text">${esc(n.text)}</div>
       <div class="note-footer">
-        <span class="note-ts">${fmtTs(n.timestamp)}</span>
-        <button class="note-del" onclick="deleteNote('${esc(policyNo)}','${n.id}')">Delete</button>
+        <span class="note-ts">${fmtTs(n.createdAt)}</span>
+        <button class="note-del" onclick="deleteNote('${safeAttr(policyNo)}',${n.id})">Delete</button>
       </div>
     </div>
   `).join('');
 }
 
-function saveNote(){
+async function saveNote(){
   const text = document.getElementById('note-input').value.trim();
   if(!text || !activeNotePolicy) return;
-  const data  = loadNotes();
-  if(!data[activeNotePolicy]) data[activeNotePolicy] = [];
-  data[activeNotePolicy].push({
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
-    text,
-    timestamp: new Date().toISOString()
-  });
-  saveNotes(data);
+  await addNoteToServer(activeNotePolicy, text);
   document.getElementById('note-input').value = '';
   renderNotesList(activeNotePolicy);
-  render(); // refresh table so note count badge updates
+  render();
   showToast('Note saved ✓');
 }
 
-function deleteNote(policyNo, noteId){
-  const data = loadNotes();
-  if(data[policyNo]) data[policyNo] = data[policyNo].filter(n => n.id !== noteId);
-  saveNotes(data);
+async function deleteNote(policyNo, noteId){
+  await deleteNoteFromServer(noteId, policyNo);
   renderNotesList(policyNo);
   render();
 }
@@ -1915,9 +2011,8 @@ document.addEventListener('keydown', e => {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 updateDataBadge();
-updateSidebarCounts();
-updateDoneBtn();
-render();
+// Check if user is already logged in
+checkAuth();
 </script>
 </body>
 </html>
