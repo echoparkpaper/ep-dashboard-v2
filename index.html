@@ -304,6 +304,29 @@ tr.row-soon:hover td{background:rgba(186,117,23,0.07);}
 
 .empty-msg{text-align:center;padding:52px 20px;color:var(--muted);font-size:13px;}
 
+/* ── Priority dropdown ── */
+.pri-select{
+  font-family:var(--sans);
+  font-size:10.5px;
+  font-weight:600;
+  padding:4px 8px;
+  border-radius:6px;
+  border:1px solid transparent;
+  cursor:pointer;
+  appearance:none;
+  -webkit-appearance:none;
+  text-align:center;
+  min-width:80px;
+  outline:none;
+  transition:all 0.15s;
+  color:#fff;
+}
+.pri-select:hover{opacity:0.85;}
+.pri-critical{background:#c0392b;border-color:#c0392b;}
+.pri-high{background:#E07A5F;border-color:#E07A5F;}
+.pri-today{background:#4A90D9;border-color:#4A90D9;}
+.pri-no-worries{background:#1D9E75;border-color:#1D9E75;}
+
 /* ── Workflow Status dropdown ── */
 .wf-select{
   font-family:var(--sans);
@@ -849,6 +872,7 @@ footer{
               <th onclick="sortBy('ico')">ICO <span class="sort-icon" id="si-ico">↕</span></th>
               <th onclick="sortBy('policyNo')">Policy # <span class="sort-icon" id="si-policyNo">↕</span></th>
               <th onclick="sortBy('premium')" style="text-align:right;">Est. Premium <span class="sort-icon" id="si-premium">↕</span></th>
+              <th onclick="sortBy('priority')" style="text-align:center;">Priority <span class="sort-icon" id="si-priority">↕</span></th>
               <th onclick="sortBy('workflow')" style="text-align:center;">Status <span class="sort-icon" id="si-workflow">↕</span></th>
               <th style="cursor:default;width:80px;text-align:center;">Notes</th>
             </tr>
@@ -977,7 +1001,8 @@ const META_KEY = 'meridian_data_meta';
 function withDays(raw){
   const exp = new Date(raw.expDate); exp.setHours(0,0,0,0);
   const wf = (JSON.parse(localStorage.getItem('meridian_workflow_status')||'{}'))[raw.policyNo] || 'Not Started';
-  return {...raw, days: Math.round((exp - TODAY) / 86400000), workflow: wf};
+  const pri = (JSON.parse(localStorage.getItem('meridian_priority')||'{}'))[raw.policyNo] || 'No Worries';
+  return {...raw, days: Math.round((exp - TODAY) / 86400000), workflow: wf, priority: pri};
 }
 
 // Load from localStorage if available, else fall back to hardcoded data
@@ -1124,7 +1149,7 @@ function renderCards(data){
 function renderTable(data){
   const tbody = document.getElementById('table-body');
   if(!data.length){
-    tbody.innerHTML='<tr><td colspan="11" class="empty-msg">No policies match your filters.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="12" class="empty-msg">No policies match your filters.</td></tr>';
     return;
   }
   tbody.innerHTML = data.map(p=>{
@@ -1147,6 +1172,7 @@ function renderTable(data){
       <td><span class="ico-text">${esc(p.ico)}</span></td>
       <td><span class="policy-no">${esc(p.policyNo)}</span></td>
       <td class="${pClass}">${fmtPrem(p.premium)}</td>
+      <td style="text-align:center;">${priSelect(p.policyNo)}</td>
       <td style="text-align:center;">${showingDone ? restoreBtn(p.policyNo) : wfSelect(p.policyNo, p.workflow)}</td>
       <td style="text-align:center;">${noteBtn(p.policyNo)}</td>
     </tr>`;
@@ -1154,7 +1180,7 @@ function renderTable(data){
 }
 
 function updateSortIcons(){
-  const cols=['expDate','days','clientName','policyLine','status','billMode','ico','policyNo','premium','workflow'];
+  const cols=['expDate','days','clientName','policyLine','status','billMode','ico','policyNo','premium','priority','workflow'];
   cols.forEach(c=>{
     const el=document.getElementById('si-'+c);
     const th=el?.closest('th');
@@ -1591,6 +1617,28 @@ function setParseStatus(type, msg){
   const el = document.getElementById('parse-status');
   el.className = 'parse-status ' + type;
   el.textContent = msg;
+}
+
+// ─── Priority ────────────────────────────────────────────────────────────────
+const PRI_KEY = 'meridian_priority';
+const PRI_OPTIONS = ['No Worries','Today','High','Critical'];
+const PRI_CLASSES = {'Critical':'pri-critical','High':'pri-high','Today':'pri-today','No Worries':'pri-no-worries'};
+
+function loadPriority(){ try{ return JSON.parse(localStorage.getItem(PRI_KEY)||'{}'); }catch(e){ return {}; } }
+function savePriority(data){ localStorage.setItem(PRI_KEY, JSON.stringify(data)); }
+
+function priSelect(policyNo){
+  const val = loadPriority()[policyNo] || 'No Worries';
+  const cls = PRI_CLASSES[val]||'pri-no-worries';
+  const opts = PRI_OPTIONS.map(o => `<option value="${o}"${o===val?' selected':''}>${o}</option>`).join('');
+  return `<select class="pri-select ${cls}" onchange="setPriority('${safeAttr(policyNo)}',this)">${opts}</select>`;
+}
+
+function setPriority(policyNo, el){
+  const data = loadPriority();
+  data[policyNo] = el.value;
+  savePriority(data);
+  el.className = 'pri-select ' + (PRI_CLASSES[el.value]||'pri-no-worries');
 }
 
 // ─── Workflow Status ─────────────────────────────────────────────────────────
