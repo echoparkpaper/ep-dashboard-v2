@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Account - Meridian Insurance</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231e3a5f'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Georgia,serif' font-size='16' font-weight='bold' fill='white'%3EMI%3C/text%3E%3C/svg%3E" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f0ede8;--surface:#ffffff;--surface2:#f7f5f2;--border:#e0dbd3;--accent:#2c5282;--red:#c0392b;--muted:#7a8090;--text:#1a2332;--header:#1e3a5f;--serif:'DM Serif Display',serif;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;align-items:center;justify-content:center;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px;width:380px;box-shadow:0 12px 40px rgba(0,0,0,0.08);}
+.logo{font-family:var(--serif);font-size:22px;color:var(--header);margin-bottom:4px;}
+.sub{font-size:11px;color:var(--muted);margin-bottom:24px;font-family:var(--mono);}
+.label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;}
+.input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;font-family:var(--sans);color:var(--text);outline:none;margin-bottom:12px;}
+.input:focus{border-color:var(--accent);}
+.btn{width:100%;background:var(--accent);border:none;border-radius:7px;padding:10px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;transition:background 0.15s;margin-top:4px;}
+.btn:hover{background:#1e3a5f;}
+.err{font-size:11px;color:var(--red);margin-top:8px;min-height:16px;}
+.link{font-size:12px;color:var(--accent);text-decoration:none;display:block;text-align:center;margin-top:16px;}
+.link:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Meridian Insurance</div>
+  <div class="sub">Create Your Account</div>
+  <div class="label">Full Name</div>
+  <input class="input" id="name" type="text" placeholder="John Smith">
+  <div class="label">Email</div>
+  <input class="input" id="email" type="email" placeholder="you@company.com">
+  <div class="label">Password</div>
+  <input class="input" id="password" type="password" placeholder="Min 6 characters">
+  <div class="label">Confirm Password</div>
+  <input class="input" id="password2" type="password" placeholder="Confirm password" onkeydown="if(event.key==='Enter')doRegister()">
+  <button class="btn" onclick="doRegister()">Create Account</button>
+  <div class="err" id="err"></div>
+  <a class="link" href="index.html">Already have an account? Sign In</a>
+</div>
+<script>
+const API = 'https://ep-dashboard-v2-backend-1.onrender.com';
+async function doRegister(){
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const pw = document.getElementById('password').value;
+  const pw2 = document.getElementById('password2').value;
+  const err = document.getElementById('err');
+  if(!name||!email||!pw){ err.textContent='All fields are required'; return; }
+  if(pw !== pw2){ err.textContent='Passwords do not match'; return; }
+  if(pw.length < 6){ err.textContent='Password must be at least 6 characters'; return; }
+  err.textContent='Creating account...';
+  try {
+    const res = await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,name,password:pw})});
+    const data = await res.json();
+    if(data.error){ err.textContent=data.error; return; }
+    localStorage.setItem('mi_jwt', data.token);
+    window.location.href = 'index.html';
+  } catch(e){ err.textContent='Network error. Please try again.'; }
+}
+</script>
+</body>
+</html>
