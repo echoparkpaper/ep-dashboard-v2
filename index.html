@@ -1235,10 +1235,12 @@ function updateDataBadge(){
   const meta = getDataMeta();
   const badge = document.getElementById('data-badge');
   if(!badge) return;
-  if(meta){
+  if(meta && POLICIES.length > 0){
     badge.textContent = `📄 ${meta.filename} · ${meta.count} policies · ${meta.loadedAt}`;
+    badge.style.display = '';
   } else {
-    badge.textContent = '📄 Report: 4/1/2026 · Page 1 of 2 (built-in)';
+    badge.textContent = '';
+    badge.style.display = 'none';
   }
 }
 
