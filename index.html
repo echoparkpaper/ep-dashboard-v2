@@ -784,7 +784,7 @@ footer{
 <body>
 
 <!-- Login Screen -->
-<div class="login-wrap" id="login-wrap">
+<div class="login-wrap" id="login-wrap" style="display:none;">
   <div class="login-card">
     <div class="login-logo">Meridian Insurance</div>
     <div class="login-sub">Policy Expiration Tracker</div>
@@ -825,7 +825,7 @@ footer{
   <div class="sidebar">
     <div style="padding:14px 12px 6px;">
       <div onclick="setView('all')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;cursor:pointer;font-family:var(--sans);font-size:12.5px;color:var(--header);font-weight:500;transition:all 0.15s;border:1px solid transparent;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Home
       </div>
     </div>
@@ -1099,7 +1099,10 @@ async function doLogin(){
 }
 
 async function checkAuth(){
-  if(!MI_TOKEN){ return; }
+  if(!MI_TOKEN){
+    document.getElementById('login-wrap').style.display='flex';
+    return;
+  }
   const res = await miApi('GET','/api/auth/me');
   if(res.user){
     MI_USER = res.user;
@@ -1108,6 +1111,7 @@ async function checkAuth(){
   } else {
     localStorage.removeItem('mi_jwt');
     MI_TOKEN = null;
+    document.getElementById('login-wrap').style.display='flex';
   }
 }
 
