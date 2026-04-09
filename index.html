@@ -693,6 +693,8 @@ tr.row-soon:hover td{background:rgba(186,117,23,0.07);}
 .upload-btn:hover{background:var(--accent);}
 .clear-data-btn{width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all 0.15s;margin-top:6px;}
 .clear-data-btn:hover{background:#fef2f2;color:#c0392b;border-color:#f5c6c6;}
+.restore-data-btn{display:none;width:100%;background:transparent;color:var(--accent);border:1px solid rgba(44,82,130,0.25);border-radius:7px;padding:6px 12px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all 0.15s;margin-top:6px;}
+.restore-data-btn:hover{background:var(--accent-light);border-color:rgba(44,82,130,0.4);}
 
 /* ── Login ── */
 .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);position:fixed;inset:0;z-index:500;}
@@ -925,6 +927,7 @@ footer{
         ⬆ Upload Report
       </button>
       <button class="clear-data-btn" onclick="clearAllData()">🗑 Clear All Data</button>
+      <button class="restore-data-btn" id="restore-data-btn" onclick="undoClear()">↩ Restore Last Data</button>
       <div class="api-status" style="margin-top:10px;">
         <div class="api-dot" id="api-dot"></div>
         <span id="api-status-text">Static · Epic API Not Connected</span>
@@ -1501,7 +1504,6 @@ let _clearBackup = null;
 
 function clearAllData(){
   if(!confirm('Clear all policy data?'))return;
-  // Save backup before clearing
   _clearBackup = {
     policies: JSON.parse(localStorage.getItem(DATA_KEY)||'[]'),
     meta: JSON.parse(localStorage.getItem(META_KEY)||'null')
@@ -1513,7 +1515,8 @@ function clearAllData(){
   updateDataBadge();
   updateSidebarCounts();
   render();
-  showUndoToast('All data cleared', undoClear);
+  updateRestoreBtn();
+  showToast('All data cleared');
 }
 
 function undoClear(){
@@ -1527,7 +1530,13 @@ function undoClear(){
   updateSidebarCounts();
   updateDoneBtn();
   render();
+  updateRestoreBtn();
   showToast('Data restored');
+}
+
+function updateRestoreBtn(){
+  const btn = document.getElementById('restore-data-btn');
+  if(btn) btn.style.display = _clearBackup && _clearBackup.policies.length > 0 ? 'block' : 'none';
 }
 
 function closeUploadModal(){
