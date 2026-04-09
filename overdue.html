@@ -576,23 +576,17 @@ async function handleFile(file){
     for(let i=1;i<=pdf.numPages;i++){
       const page = await pdf.getPage(i);
       const tc = await page.getTextContent();
-      allItems = allItems.concat(tc.items.map(it=>({
-        text:it.str, x:Math.round(it.transform[4]), y:Math.round(it.transform[5]),
-        w:Math.round(it.width), h:Math.round(it.height)
-      })));
+      tc.items.forEach(it=>{
+        if(it.str.trim()) allItems.push({
+          text:it.str.trim(), x:Math.round(it.transform[4]), y:Math.round(it.transform[5]),
+          page:i
+        });
+      });
     }
-    // Build lines by Y position
-    const yGroups = {};
-    allItems.forEach(it=>{
-      if(!it.text.trim()) return;
-      const yk = Math.round(it.y/3)*3; // group nearby Y values
-      if(!yGroups[yk]) yGroups[yk]=[];
-      yGroups[yk].push(it);
-    });
-    const lines = Object.keys(yGroups).sort((a,b)=>b-a).map(y=>{
-      return yGroups[y].sort((a,b)=>a.x-b.x).map(it=>it.text.trim()).join('\t');
-    });
-    const fullText = lines.join('\n');
+
+    // Reconstruct the full text by joining nearby Y items into lines
+    // Use a wider Y grouping to handle multi-line text within same row
+    const fullText = buildFullText(allItems);
     const accounts = parseOverdueText(fullText);
     if(accounts.length===0){
       setStatus('err','Could not parse any accounts from this PDF.');
@@ -608,68 +602,129 @@ async function handleFile(file){
   }
 }
 
+function buildFullText(items){
+  // Sort by page, then Y descending (top of page first), then X ascending
+  items.sort((a,b)=> a.page!==b.page ? a.page-b.page : Math.abs(a.y-b.y)<2 ? a.x-b.x : b.y-a.y);
+  // Group into lines by Y proximity (within 2px = same line)
+  const lines = [];
+  let currentLine = [];
+  let lastY = null;
+  let lastPage = null;
+  items.forEach(it=>{
+    if(lastY===null || it.page!==lastPage || Math.abs(it.y-lastY)>2){
+      if(currentLine.length) lines.push(currentLine.map(c=>c.text).join('\t'));
+      currentLine = [it];
+      lastY = it.y;
+      lastPage = it.page;
+    } else {
+      currentLine.push(it);
+    }
+  });
+  if(currentLine.length) lines.push(currentLine.map(c=>c.text).join('\t'));
+  return lines.join('\n');
+}
+
 function parseOverdueText(text){
-  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const lines = text.split('\n');
   const accounts = [];
   let currentLineType = 'Commercial';
   let currentCategory = '';
+  let currentAccount = null;
+
   const catPatterns = [
-    { regex: /(\d+)\s+Accounts?\s+are\s+Cancel\s+Pending\s+Today/i, cat: 'Cancel Pending Today' },
-    { regex: /(\d+)\s+Accounts?\s+are\s+still\s+Cancel\s+Pending/i, cat: 'Still Cancel Pending' },
-    { regex: /(\d+)\s+Accounts?\s+are\s+Cancel\s+Pending\s+Reinstated/i, cat: 'Cancel Pending Reinstated' },
-    { regex: /(\d+)\s+Accounts?\s+had\s+Earned\s+Premium\s+Due\s+Notice\s+Sent/i, cat: 'Notice Sent Today' },
-    { regex: /(\d+)\s+Accounts?\s+with\s+Earned\s+Premium\s+Due\s+Awaiting/i, cat: 'Earned Premium Due' },
+    { regex: /Accounts?\s+are\s+Cancel\s+Pending\s+Today/i, cat: 'Cancel Pending Today' },
+    { regex: /Accounts?\s+are\s+still\s+Cancel\s+Pending/i, cat: 'Still Cancel Pending' },
+    { regex: /Accounts?\s+are\s+Cancel\s+Pending\s+Reinstated/i, cat: 'Cancel Pending Reinstated' },
+    { regex: /Accounts?\s+had\s+Earned\s+Premium\s+Due\s+Notice\s+Sent/i, cat: 'Notice Sent Today' },
+    { regex: /Accounts?\s+with\s+Earned\s+Premium\s+Due\s+Awaiting/i, cat: 'Earned Premium Due' },
   ];
 
+  function flushAccount(){
+    if(currentAccount && (currentAccount.name || currentAccount.policy)){
+      currentAccount.name = currentAccount.name.replace(/\s+/g,' ').trim();
+      currentAccount.policy = currentAccount.policy.replace(/\s+/g,' ').replace(/\s*\+\s*\d+\s*more/i,'').trim();
+      accounts.push({...currentAccount});
+    }
+    currentAccount = null;
+  }
+
   for(let i=0;i<lines.length;i++){
-    const line = lines[i];
+    const line = lines[i].trim();
+    if(!line) continue;
+    const parts = line.split('\t').map(p=>p.trim()).filter(Boolean);
+    const joined = parts.join(' ');
+
     // Detect line type
-    if(/Commercial\s+Lines/i.test(line)){ currentLineType='Commercial'; continue; }
-    if(/Personal\s+Lines/i.test(line)){ currentLineType='Personal'; continue; }
+    if(/Commercial\s+Lines/i.test(joined)){ flushAccount(); currentLineType='Commercial'; continue; }
+    if(/Personal\s+Lines/i.test(joined)){ flushAccount(); currentLineType='Personal'; continue; }
+
     // Detect category
     let catMatch = false;
     for(const p of catPatterns){
-      if(p.regex.test(line)){ currentCategory=p.cat; catMatch=true; break; }
+      if(p.regex.test(joined)){ flushAccount(); currentCategory=p.cat; catMatch=true; break; }
     }
     if(catMatch) continue;
-    // Skip headers and meta
-    if(/^(Billing|Account|Name|Policy|Minimum|Due|Amount|Showing|No results)/i.test(line)) continue;
-    if(/^Overdue Accounts/i.test(line)) continue;
-    if(/change$/i.test(line)) continue;
 
-    // Try to find account rows - lines starting with a numeric account number
-    const parts = line.split('\t');
-    // Look for account number (6-12 digit number)
-    const acctMatch = parts[0] && /^\d{6,12}$/.test(parts[0].trim());
-    if(acctMatch && currentCategory){
-      const account = parts[0].trim();
-      // Gather remaining fields from this line and potentially following lines
-      let name='', policy='', amount=0, dueDate='';
-      // Parse the rest of the tab-separated values
-      for(let j=1;j<parts.length;j++){
-        const p = parts[j].trim();
-        if(!p) continue;
-        if(/^\$[\d,.]+$/.test(p)){ amount = parseFloat(p.replace(/[$,]/g,'')); }
-        else if(/^\d{2}\/\d{2}\/\d{4}$/.test(p)){ dueDate = p; }
-        else if(/^[A-Z\-]+\s*[•·]\s*.+/.test(p)){ policy = p.replace(/\s*[•·]\s*/,' '); }
-        else if(!name){ name = p; }
-        else if(!policy && /[A-Z]/.test(p)){
-          // Could be continuation of name or policy
-          if(p.includes('•') || p.includes('·')){ policy = p.replace(/\s*[•·]\s*/,' '); }
-          else { name += ' ' + p; }
-        }
+    // Skip headers, meta lines
+    if(/^(Billing|Name|Policy|Minimum|Due\s|Amount|Showing|No results)/i.test(joined)) continue;
+    if(/^Overdue\s+Accounts/i.test(joined)) continue;
+    if(/change$/i.test(joined)) continue;
+    if(/^Account$/i.test(joined)) continue;
+
+    if(!currentCategory) continue;
+
+    // Check each part for data types
+    for(const p of parts){
+      const trimmed = p.trim();
+      if(!trimmed) continue;
+
+      // Account number: 6-12 digits, standalone
+      if(/^\d{6,12}$/.test(trimmed) && !currentAccount){
+        flushAccount();
+        currentAccount = { name:'', account:trimmed, policy:'', lineType:currentLineType, category:currentCategory, amount:0, dueDate:'' };
+        continue;
       }
-      // Clean up name
-      name = name.replace(/\s+/g,' ').trim();
-      if(name || policy){
-        accounts.push({
-          name, account, policy: policy.replace(/\s*\+\s*\d+\s*more/i,'').trim(),
-          lineType: currentLineType, category: currentCategory,
-          amount: amount||0, dueDate: dueDate||''
-        });
+
+      if(!currentAccount) continue;
+
+      // Money amount
+      if(/^\$[\d,.]+$/.test(trimmed)){
+        currentAccount.amount = parseFloat(trimmed.replace(/[$,]/g,'')) || 0;
+        continue;
+      }
+
+      // Date
+      if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)){
+        currentAccount.dueDate = trimmed;
+        continue;
+      }
+
+      // Policy: contains bullet character or looks like a policy number pattern
+      if(trimmed.includes('\u2022') || trimmed.includes('•') || trimmed.includes('·')){
+        const polText = trimmed.replace(/\s*[•·\u2022]\s*/g,' ').trim();
+        currentAccount.policy = currentAccount.policy ? currentAccount.policy + ' ' + polText : polText;
+        continue;
+      }
+
+      // Policy line prefix patterns (WC, TPP, BOP, CAUTO, PAUTO, HOME, DFIRE, C-UMB, etc)
+      if(/^(WC|TPP|BOP|CAUTO|PAUTO|HOME|DFIRE|C-UMB|PUMBR|PUMB)\b/i.test(trimmed)){
+        currentAccount.policy = currentAccount.policy ? currentAccount.policy + ' ' + trimmed : trimmed;
+        continue;
+      }
+
+      // Policy number pattern (starts with letter+digits or pure digits with dashes)
+      if(/^[A-Z]\d{3,}/.test(trimmed) || /^\d{2,}-\d+/.test(trimmed)){
+        currentAccount.policy = currentAccount.policy ? currentAccount.policy + ' ' + trimmed : trimmed;
+        continue;
+      }
+
+      // Otherwise it's part of the name
+      if(!/^(Billing|Account|Name|Policy|Minimum|Due|Amount|Showing|of\s+\d)/i.test(trimmed)){
+        currentAccount.name = currentAccount.name ? currentAccount.name + ' ' + trimmed : trimmed;
       }
     }
   }
+  flushAccount();
   return accounts;
 }
 
