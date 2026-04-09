@@ -98,6 +98,27 @@ tr:hover{background:var(--surface2);}
 .sort-icon{font-size:9px;margin-left:3px;color:var(--border2);}
 .empty-msg{text-align:center;padding:52px 20px;color:var(--muted);font-size:13px;}
 
+/* ── Priority dropdown ── */
+.pri-select{font-family:var(--sans);font-size:10px;font-weight:600;padding:3px 18px 3px 7px;border-radius:5px;border:1px solid transparent;cursor:pointer;appearance:none;-webkit-appearance:none;text-align:center;outline:none;transition:all 0.15s;color:#fff;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' fill='none'%3E%3Cpath d='M1 1l3 3 3-3' stroke='rgba(255,255,255,0.8)' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;}
+.pri-select:hover{opacity:0.85;}
+.pri-critical{background-color:#a53030;border-color:#a53030;}
+.pri-high{background-color:#c45c3a;border-color:#c45c3a;}
+.pri-today{background-color:#1e3a5f;border-color:#1e3a5f;}
+.pri-no-worries{background-color:#5a9e8f;border-color:#5a9e8f;}
+
+/* ── Workflow Status dropdown ── */
+.wf-select{font-family:var(--sans);font-size:10px;font-weight:600;padding:3px 18px 3px 7px;border-radius:5px;border:1px solid transparent;cursor:pointer;appearance:none;-webkit-appearance:none;text-align:center;outline:none;transition:all 0.15s;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' fill='none'%3E%3Cpath d='M1 1l3 3 3-3' stroke='rgba(255,255,255,0.8)' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;}
+.wf-select:hover{opacity:0.85;}
+.wf-not-started{background-color:#4A90D9;color:#fff;border-color:#4A90D9;}
+.wf-in-progress{background-color:#E07A5F;color:#fff;border-color:#E07A5F;}
+.wf-done{background-color:#1D9E75;color:#fff;border-color:#1D9E75;}
+
+/* ── Row fade-out ── */
+@keyframes rowFadeOut{0%{opacity:1;transform:translateX(0);}100%{opacity:0;transform:translateX(20px);}}
+.row-fade-out{animation:rowFadeOut 0.45s ease forwards;pointer-events:none;}
+
 /* ── Category badges ── */
 .cat-badge{font-size:9.5px;font-family:var(--mono);padding:3px 8px;border-radius:5px;font-weight:500;white-space:nowrap;}
 .cat-cancel-today{background:#fdecea;color:#c0392b;}
@@ -270,10 +291,12 @@ tr:hover{background:var(--surface2);}
               <th onclick="sortBy('category')">Category <span class="sort-icon" id="si-category">&#x2195;</span></th>
               <th onclick="sortBy('amount')" style="text-align:right;">Amount Due <span class="sort-icon" id="si-amount">&#x2195;</span></th>
               <th onclick="sortBy('dueDate')">Due Date <span class="sort-icon" id="si-dueDate">&#x2195;</span></th>
+              <th onclick="sortBy('priority')" style="text-align:center;">Priority <span class="sort-icon" id="si-priority">&#x2195;</span></th>
+              <th onclick="sortBy('workflow')" style="text-align:center;">Status <span class="sort-icon" id="si-workflow">&#x2195;</span></th>
             </tr>
           </thead>
           <tbody id="table-body">
-            <tr><td colspan="7" class="empty-msg">No data loaded. Upload an Overdue Accounts report to get started.</td></tr>
+            <tr><td colspan="9" class="empty-msg">No data loaded. Upload an Overdue Accounts report to get started.</td></tr>
           </tbody>
         </table>
       </div>
@@ -370,11 +393,19 @@ function showDashboard(){
 }
 
 async function loadServerData(){
-  const res = await miApi('GET','/api/overdue');
-  if(!res.error && res.accounts && res.accounts.length > 0){
-    ACCOUNTS = res.accounts;
+  const [overdueRes, dataRes] = await Promise.all([
+    miApi('GET','/api/overdue'),
+    miApi('GET','/api/data')
+  ]);
+  if(!overdueRes.error && overdueRes.accounts && overdueRes.accounts.length > 0){
+    ACCOUNTS = overdueRes.accounts;
   } else {
     ACCOUNTS = [];
+  }
+  if(!dataRes.error){
+    serverWorkflow = dataRes.workflow || {};
+    serverPriority = dataRes.priority || {};
+    serverManualPri = dataRes.manualPri || {};
   }
 }
 
@@ -412,6 +443,12 @@ function getFiltered(){
   else if(currentView==='personal') data=data.filter(a=>a.lineType==='Personal');
 
   if(lineFilter!=='all') data=data.filter(a=>a.lineType.toLowerCase()===lineFilter);
+
+  // Hide done items
+  data = data.filter(a=>{
+    const key = a.account+'|'+a.policy;
+    return serverWorkflow[key] !== 'Done';
+  });
 
   if(searchQuery){
     const q=searchQuery.toLowerCase();
@@ -475,7 +512,7 @@ function renderCards(data){
 function renderTable(data){
   const tbody = document.getElementById('table-body');
   if(!data.length){
-    tbody.innerHTML='<tr><td colspan="7" class="empty-msg">No accounts match your filters.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="9" class="empty-msg">No accounts match your filters.</td></tr>';
     return;
   }
   const today = new Date(); today.setHours(0,0,0,0);
@@ -489,6 +526,7 @@ function renderTable(data){
       if(dd < today) dateCls = 'date-cell date-overdue';
       else if((dd - today) / 86400000 <= 7) dateCls = 'date-cell date-soon';
     }
+    const key = a.account+'|'+a.policy;
     return `<tr>
       <td style="font-weight:500;">${esc(a.name||'')}</td>
       <td style="font-family:var(--mono);font-size:10px;color:var(--muted);">${esc(a.account||'')}</td>
@@ -497,12 +535,14 @@ function renderTable(data){
       <td><span class="cat-badge ${catCls}">${esc(a.category||'')}</span></td>
       <td class="${amtCls}">${amt ? fmtMoney(amt) : ''}</td>
       <td class="${dateCls}">${a.dueDate ? fmtDate(a.dueDate) : ''}</td>
+      <td style="text-align:center;">${priSelect(key, a.dueDate)}</td>
+      <td style="text-align:center;">${wfSelect(key)}</td>
     </tr>`;
   }).join('');
 }
 
 function updateSortIcons(){
-  const cols=['name','account','policy','lineType','category','amount','dueDate'];
+  const cols=['name','account','policy','lineType','category','amount','dueDate','priority','workflow'];
   cols.forEach(c=>{
     const el=document.getElementById('si-'+c);
     if(c===sortCol){if(el)el.textContent=sortDir===1?'\u2191':'\u2193';}
@@ -549,6 +589,66 @@ function setLineFilter(m){
 
 function onSearch(val){ searchQuery=val.trim(); render(); }
 function sortBy(col){ if(sortCol===col) sortDir*=-1; else{sortCol=col;sortDir=1;} render(); }
+
+// ─── Priority ────────────────────────────────────────────────────────────────
+const PRI_OPTIONS = ['No Worries','Today','High','Critical'];
+const PRI_CLASSES = {'Critical':'pri-critical','High':'pri-high','Today':'pri-today','No Worries':'pri-no-worries'};
+let serverPriority = {};
+let serverManualPri = {};
+
+function autoPriority(dueDate){
+  if(!dueDate) return 'No Worries';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dd = new Date(dueDate); dd.setHours(0,0,0,0);
+  const days = Math.round((dd - today) / 86400000);
+  if(days <= 5) return 'Today';
+  if(days <= 15) return 'Critical';
+  if(days <= 30) return 'High';
+  return 'No Worries';
+}
+
+function safeAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function priSelect(key, dueDate){
+  const val = serverManualPri[key] ? (serverPriority[key]||autoPriority(dueDate)) : autoPriority(dueDate);
+  serverPriority[key] = val;
+  const cls = PRI_CLASSES[val]||'pri-no-worries';
+  const opts = PRI_OPTIONS.map(o=>`<option value="${o}"${o===val?' selected':''}>${o}</option>`).join('');
+  return `<select class="pri-select ${cls}" onchange="setPriority('${safeAttr(key)}',this)">${opts}</select>`;
+}
+
+function setPriority(key, el){
+  serverPriority[key] = el.value;
+  serverManualPri[key] = true;
+  el.className = 'pri-select ' + (PRI_CLASSES[el.value]||'pri-no-worries');
+  miApi('PUT','/api/priority',{policyNo:key, priority:el.value, isManual:true});
+}
+
+// ─── Workflow Status ─────────────────────────────────────────────────────────
+const WF_OPTIONS = ['Not Started','In Progress','Done'];
+const WF_CLASSES = {'Not Started':'wf-not-started','In Progress':'wf-in-progress','Done':'wf-done'};
+let serverWorkflow = {};
+let showingDone = false;
+
+function wfSelect(key){
+  const val = serverWorkflow[key] || 'Not Started';
+  const cls = WF_CLASSES[val]||'wf-not-started';
+  const opts = WF_OPTIONS.map(o=>`<option value="${o}"${o===val?' selected':''}>${o}</option>`).join('');
+  return `<select class="wf-select ${cls}" onchange="setWorkflow('${safeAttr(key)}',this)">${opts}</select>`;
+}
+
+function setWorkflow(key, el){
+  serverWorkflow[key] = el.value;
+  el.className = 'wf-select ' + (WF_CLASSES[el.value]||'wf-not-started');
+  miApi('PUT','/api/workflow',{policyNo:key, status:el.value});
+  if(el.value === 'Done' && !showingDone){
+    const row = el.closest('tr');
+    if(row){
+      row.classList.add('row-fade-out');
+      row.addEventListener('animationend', ()=>{ updateCounts(); render(); });
+    }
+  }
+}
 
 // ─── Upload & Parse ──────────────────────────────────────────────────────────
 let _parsed = [];
