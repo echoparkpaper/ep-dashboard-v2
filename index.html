@@ -70,6 +70,9 @@ header{
 
 /* ── Body layout ── */
 .body-wrap{display:flex;flex:1;min-height:0;}
+.sidebar-toggle{background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;padding:6px;margin-right:10px;border-radius:5px;display:flex;align-items:center;transition:all 0.15s;}
+.sidebar-toggle:hover{background:rgba(255,255,255,0.1);color:#fff;}
+.sidebar.collapsed{display:none;}
 
 /* ── Sidebar ── */
 .sidebar{
@@ -806,7 +809,10 @@ footer{
 
 <!-- Header -->
 <header>
-  <div style="display:flex;align-items:baseline;gap:0;">
+  <div style="display:flex;align-items:center;gap:0;">
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <div class="logo">Meridian Insurance</div>
     <div class="logo-sub">Policy Expiration Tracker</div>
   </div>
@@ -1132,6 +1138,7 @@ function showDashboard(){
   document.getElementById('user-name').textContent = MI_USER.name.split(' ')[0];
   document.getElementById('logout-btn').style.display = '';
   if(MI_USER.role === 'admin') document.getElementById('admin-link').style.display = '';
+  if(localStorage.getItem('mi_sidebar')==='hidden') document.querySelector('.sidebar').classList.add('collapsed');
   updateSidebarCounts();
   updateDoneBtn();
   render();
@@ -1420,6 +1427,12 @@ const VIEW_TITLES={
   new:'New Policies',ren:'Renewals',can:'Cancelled',
   'prod-COOKNA':'Nathanael Cook'
 };
+
+function toggleSidebar(){
+  const sb = document.querySelector('.sidebar');
+  sb.classList.toggle('collapsed');
+  localStorage.setItem('mi_sidebar', sb.classList.contains('collapsed') ? 'hidden' : 'visible');
+}
 
 function goHome(){
   if(currentView === 'all' && !showingDone && billFilter === 'all' && !searchQuery){
