@@ -162,7 +162,9 @@ tr:hover{background:var(--surface2);}
 
 /* ── Toast ── */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--header);color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;font-family:var(--sans);opacity:0;pointer-events:none;transition:all 0.3s ease;z-index:300;white-space:nowrap;}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:all;}
+.toast-undo{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:11px;font-family:var(--sans);font-weight:600;padding:3px 10px;border-radius:5px;cursor:pointer;margin-left:12px;transition:background 0.15s;}
+.toast-undo:hover{background:rgba(255,255,255,0.35);}
 
 /* ── Responsive ── */
 @media(max-width:860px){
@@ -841,13 +843,26 @@ function confirmLoad(){
   showToast(_parsed.length+' accounts loaded from "'+_filename+'"');
 }
 
+let _clearBackup = null;
+
 function clearAllData(){
-  if(!confirm('Clear all overdue account data? This cannot be undone.')) return;
+  if(!confirm('Clear all overdue account data?')) return;
+  _clearBackup = [...ACCOUNTS];
   ACCOUNTS=[];
   miApi('DELETE','/api/overdue');
   updateCounts();
   render();
-  showToast('All data cleared');
+  showUndoToast('All data cleared', undoClear);
+}
+
+function undoClear(){
+  if(!_clearBackup || !_clearBackup.length) return;
+  ACCOUNTS = _clearBackup;
+  miApi('PUT','/api/overdue',{ accounts:_clearBackup, meta:{ filename:'Restored', count:_clearBackup.length, loadedAt:new Date().toLocaleDateString() }});
+  _clearBackup = null;
+  updateCounts();
+  render();
+  showToast('Data restored');
 }
 
 function setStatus(type,msg){
@@ -856,11 +871,21 @@ function setStatus(type,msg){
   el.textContent=msg;
 }
 
+let _toastTimer;
 function showToast(msg){
   const el=document.getElementById('toast');
-  el.textContent=msg;
+  el.innerHTML=esc(msg);
   el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2500);
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+function showUndoToast(msg, undoFn){
+  const el=document.getElementById('toast');
+  el.innerHTML=esc(msg)+' <button class="toast-undo" onclick="event.stopPropagation();('+undoFn.name+')()">Undo</button>';
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.classList.remove('show'),6000);
 }
 
 // ─── Init ────────────────────────────────────────────────────────────────────

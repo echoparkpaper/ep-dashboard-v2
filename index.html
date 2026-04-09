@@ -720,7 +720,9 @@ tr.row-soon:hover td{background:rgba(186,117,23,0.07);}
   z-index:300;
   white-space:nowrap;
 }
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:all;}
+.toast-undo{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:11px;font-family:var(--sans);font-weight:600;padding:3px 10px;border-radius:5px;cursor:pointer;margin-left:12px;transition:background 0.15s;}
+.toast-undo:hover{background:rgba(255,255,255,0.35);}
 
 /* ── Footer ── */
 footer{
@@ -1482,8 +1484,15 @@ function openUploadModal(){
   document.getElementById('upload-overlay').classList.add('open');
 }
 
+let _clearBackup = null;
+
 function clearAllData(){
-  if(!confirm('Clear all policy data? This cannot be undone.'))return;
+  if(!confirm('Clear all policy data?'))return;
+  // Save backup before clearing
+  _clearBackup = {
+    policies: JSON.parse(localStorage.getItem(DATA_KEY)||'[]'),
+    meta: JSON.parse(localStorage.getItem(META_KEY)||'null')
+  };
   localStorage.removeItem(DATA_KEY);
   localStorage.removeItem(META_KEY);
   clearPoliciesPerUser();
@@ -1491,7 +1500,21 @@ function clearAllData(){
   updateDataBadge();
   updateSidebarCounts();
   render();
-  showToast('All data cleared');
+  showUndoToast('All data cleared', undoClear);
+}
+
+function undoClear(){
+  if(!_clearBackup) return;
+  localStorage.setItem(DATA_KEY, JSON.stringify(_clearBackup.policies));
+  if(_clearBackup.meta) localStorage.setItem(META_KEY, JSON.stringify(_clearBackup.meta));
+  savePoliciesPerUser(_clearBackup.policies, _clearBackup.meta);
+  POLICIES = _clearBackup.policies.map(withDays);
+  _clearBackup = null;
+  updateDataBadge();
+  updateSidebarCounts();
+  updateDoneBtn();
+  render();
+  showToast('Data restored');
 }
 
 function closeUploadModal(){
@@ -2044,10 +2067,18 @@ function fmtTs(iso){
 let _toastTimer;
 function showToast(msg){
   const el = document.getElementById('toast');
-  el.textContent = msg;
+  el.innerHTML = esc(msg);
   el.classList.add('show');
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+function showUndoToast(msg, undoFn){
+  const el = document.getElementById('toast');
+  el.innerHTML = esc(msg) + ' <button class="toast-undo" onclick="event.stopPropagation();('+undoFn.name+')()">Undo</button>';
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(()=>el.classList.remove('show'), 6000);
 }
 
 // Keyboard: Escape closes panel, Ctrl+Enter saves note
