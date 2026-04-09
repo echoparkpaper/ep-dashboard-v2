@@ -172,8 +172,11 @@ tr:hover{background:var(--surface2);}
 .upload-btn:hover{background:var(--accent);}
 .clear-data-btn{width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all 0.15s;margin-top:6px;}
 .clear-data-btn:hover{background:#fef2f2;color:#c0392b;border-color:#f5c6c6;}
-.restore-data-btn{display:none;width:100%;background:transparent;color:var(--accent);border:1px solid rgba(44,82,130,0.25);border-radius:7px;padding:6px 12px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all 0.15s;margin-top:6px;}
-.restore-data-btn:hover{background:var(--accent-light);border-color:rgba(44,82,130,0.4);}
+.restore-data-btn{width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all 0.15s;margin-top:6px;opacity:0.5;}
+.restore-data-btn:hover{background:var(--accent-light);color:var(--accent);border-color:rgba(44,82,130,0.4);opacity:1;}
+.restore-data-btn.has-backup{color:var(--accent);border-color:rgba(44,82,130,0.25);opacity:1;}
+.restore-data-btn.has-backup:hover{background:var(--accent-light);border-color:rgba(44,82,130,0.4);}
+.restore-data-btn.no-backup{pointer-events:none;opacity:0.35;}
 
 /* ── Modal ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center;z-index:200;}
@@ -446,6 +449,7 @@ function showDashboard(){
   if(MI_USER.role === 'admin') document.getElementById('admin-link').style.display = '';
   if(localStorage.getItem('mi_sidebar')==='hidden') document.querySelector('.sidebar').classList.add('collapsed');
   updateCounts();
+  updateRestoreBtn();
   render();
 }
 
@@ -989,29 +993,37 @@ let _clearBackup = null;
 
 function clearAllData(){
   if(!confirm('Clear all overdue account data?')) return;
-  _clearBackup = [...ACCOUNTS];
+  if(ACCOUNTS.length > 0){
+    miApi('PUT','/api/backup/overdue',{ accounts:ACCOUNTS, meta:{ filename:'Backup', count:ACCOUNTS.length, loadedAt:new Date().toLocaleDateString() }});
+  }
   ACCOUNTS=[];
   miApi('DELETE','/api/overdue');
   updateCounts();
   render();
-  updateRestoreBtn();
+  updateRestoreBtn(true);
   showToast('All data cleared');
 }
 
-function undoClear(){
-  if(!_clearBackup || !_clearBackup.length) return;
-  ACCOUNTS = _clearBackup;
-  miApi('PUT','/api/overdue',{ accounts:_clearBackup, meta:{ filename:'Restored', count:_clearBackup.length, loadedAt:new Date().toLocaleDateString() }});
-  _clearBackup = null;
+async function undoClear(){
+  const res = await miApi('GET','/api/backup/overdue');
+  if(!res.data || !res.data.length){ showToast('No backup available'); return; }
+  ACCOUNTS = res.data;
+  miApi('PUT','/api/overdue',{ accounts:res.data, meta:res.meta||{ filename:'Restored', count:res.data.length, loadedAt:new Date().toLocaleDateString() }});
+  miApi('DELETE','/api/backup/overdue');
   updateCounts();
   render();
-  updateRestoreBtn();
+  updateRestoreBtn(false);
   showToast('Data restored');
 }
 
-function updateRestoreBtn(){
+async function updateRestoreBtn(hasBackup){
   const btn = document.getElementById('restore-data-btn');
-  if(btn) btn.style.display = _clearBackup && _clearBackup.length > 0 ? 'block' : 'none';
+  if(!btn) return;
+  if(hasBackup === undefined){
+    const res = await miApi('GET','/api/backup/overdue');
+    hasBackup = res.data && res.data.length > 0;
+  }
+  btn.className = 'restore-data-btn ' + (hasBackup ? 'has-backup' : 'no-backup');
 }
 
 function setStatus(type,msg){

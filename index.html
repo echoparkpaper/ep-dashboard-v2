@@ -693,8 +693,11 @@ tr.row-soon:hover td{background:rgba(186,117,23,0.07);}
 .upload-btn:hover{background:var(--accent);}
 .clear-data-btn{width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all 0.15s;margin-top:6px;}
 .clear-data-btn:hover{background:#fef2f2;color:#c0392b;border-color:#f5c6c6;}
-.restore-data-btn{display:none;width:100%;background:transparent;color:var(--accent);border:1px solid rgba(44,82,130,0.25);border-radius:7px;padding:6px 12px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all 0.15s;margin-top:6px;}
-.restore-data-btn:hover{background:var(--accent-light);border-color:rgba(44,82,130,0.4);}
+.restore-data-btn{width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all 0.15s;margin-top:6px;opacity:0.5;}
+.restore-data-btn:hover{background:var(--accent-light);color:var(--accent);border-color:rgba(44,82,130,0.4);opacity:1;}
+.restore-data-btn.has-backup{color:var(--accent);border-color:rgba(44,82,130,0.25);opacity:1;}
+.restore-data-btn.has-backup:hover{background:var(--accent-light);border-color:rgba(44,82,130,0.4);}
+.restore-data-btn.no-backup{pointer-events:none;opacity:0.35;}
 
 /* ── Login ── */
 .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);position:fixed;inset:0;z-index:500;}
@@ -1144,6 +1147,7 @@ function showDashboard(){
   if(localStorage.getItem('mi_sidebar')==='hidden') document.querySelector('.sidebar').classList.add('collapsed');
   updateSidebarCounts();
   updateDoneBtn();
+  updateRestoreBtn();
   render();
 }
 
@@ -1504,10 +1508,11 @@ let _clearBackup = null;
 
 function clearAllData(){
   if(!confirm('Clear all policy data?'))return;
-  _clearBackup = {
-    policies: JSON.parse(localStorage.getItem(DATA_KEY)||'[]'),
-    meta: JSON.parse(localStorage.getItem(META_KEY)||'null')
-  };
+  const backupPolicies = JSON.parse(localStorage.getItem(DATA_KEY)||'[]');
+  const backupMeta = JSON.parse(localStorage.getItem(META_KEY)||'null');
+  if(backupPolicies.length > 0){
+    miApi('PUT','/api/backup/policies',{ policies:backupPolicies, meta:backupMeta });
+  }
   localStorage.removeItem(DATA_KEY);
   localStorage.removeItem(META_KEY);
   clearPoliciesPerUser();
@@ -1515,28 +1520,34 @@ function clearAllData(){
   updateDataBadge();
   updateSidebarCounts();
   render();
-  updateRestoreBtn();
+  updateRestoreBtn(true);
   showToast('All data cleared');
 }
 
-function undoClear(){
-  if(!_clearBackup) return;
-  localStorage.setItem(DATA_KEY, JSON.stringify(_clearBackup.policies));
-  if(_clearBackup.meta) localStorage.setItem(META_KEY, JSON.stringify(_clearBackup.meta));
-  savePoliciesPerUser(_clearBackup.policies, _clearBackup.meta);
-  POLICIES = _clearBackup.policies.map(withDays);
-  _clearBackup = null;
+async function undoClear(){
+  const res = await miApi('GET','/api/backup/policies');
+  if(!res.data || !res.data.length){ showToast('No backup available'); return; }
+  localStorage.setItem(DATA_KEY, JSON.stringify(res.data));
+  if(res.meta) localStorage.setItem(META_KEY, JSON.stringify(res.meta));
+  savePoliciesPerUser(res.data, res.meta);
+  POLICIES = res.data.map(withDays);
+  miApi('DELETE','/api/backup/policies');
   updateDataBadge();
   updateSidebarCounts();
   updateDoneBtn();
   render();
-  updateRestoreBtn();
+  updateRestoreBtn(false);
   showToast('Data restored');
 }
 
-function updateRestoreBtn(){
+async function updateRestoreBtn(hasBackup){
   const btn = document.getElementById('restore-data-btn');
-  if(btn) btn.style.display = _clearBackup && _clearBackup.policies.length > 0 ? 'block' : 'none';
+  if(!btn) return;
+  if(hasBackup === undefined){
+    const res = await miApi('GET','/api/backup/policies');
+    hasBackup = res.data && res.data.length > 0;
+  }
+  btn.className = 'restore-data-btn ' + (hasBackup ? 'has-backup' : 'no-backup');
 }
 
 function closeUploadModal(){
