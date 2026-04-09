@@ -813,7 +813,9 @@ footer{
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input class="search-box" type="text" placeholder="Search client, policy #, line…" oninput="onSearch(this.value)" id="search-input">
     </div>
-    <a href="admin.html" id="admin-link" style="display:none;color:rgba(168,196,224,0.8);font-size:10px;font-family:var(--mono);text-decoration:none;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:5px;">Admin</a>
+    <a href="index.html" style="color:#fff;font-size:10px;font-family:var(--mono);text-decoration:none;padding:5px 10px;border-radius:6px;background:rgba(255,255,255,0.15);">Expirations</a>
+    <a href="overdue.html" style="color:rgba(168,196,224,0.8);font-size:10px;font-family:var(--mono);text-decoration:none;padding:5px 10px;border-radius:6px;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='rgba(168,196,224,0.8)'">Overdue</a>
+    <a href="admin.html" id="admin-link" style="display:none;color:rgba(168,196,224,0.8);font-size:10px;font-family:var(--mono);text-decoration:none;padding:5px 10px;border-radius:6px;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='rgba(168,196,224,0.8)'">Admin</a>
     <span id="user-name" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;font-family:var(--sans);padding:6px 12px;border-radius:7px;"></span>
     <button id="logout-btn" onclick="doLogout()" style="display:none;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-family:var(--sans);padding:4px 10px;border-radius:5px;cursor:pointer;">Sign Out</button>
   </div>

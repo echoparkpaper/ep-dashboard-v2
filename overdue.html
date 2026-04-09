@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overdue Accounts - Meridian Insurance</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231e3a5f'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Garamond,Adobe Garamond Pro,Georgia,serif' font-size='15' font-weight='normal' letter-spacing='1' fill='white'%3EMI%3C/text%3E%3C/svg%3E" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0ede8;--surface:#ffffff;--surface2:#f7f5f2;--border:#e0dbd3;--border2:#ccc7be;
+  --accent:#2c5282;--accent-light:#ebf0f8;--green:#1D9E75;--green-light:#e8f7f2;
+  --orange:#BA7517;--orange-light:#fdf3e0;--red:#c0392b;--red-light:#fdecea;
+  --muted:#7a8090;--text:#1a2332;--header:#1e3a5f;
+  --serif:'DM Serif Display',serif;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  --sidebar-w:230px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── Login ── */
+.login-wrap{display:none;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);position:fixed;inset:0;z-index:500;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px;width:360px;box-shadow:0 12px 40px rgba(0,0,0,0.08);}
+.login-logo{font-family:var(--serif);font-size:22px;color:var(--header);margin-bottom:4px;}
+.login-sub{font-size:11px;color:var(--muted);margin-bottom:24px;font-family:var(--mono);}
+.login-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;}
+.login-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;font-family:var(--sans);color:var(--text);outline:none;margin-bottom:12px;}
+.login-input:focus{border-color:var(--accent);}
+.login-btn{width:100%;background:var(--accent);border:none;border-radius:7px;padding:10px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;transition:background 0.15s;margin-top:4px;}
+.login-btn:hover{background:#1e3a5f;}
+.login-err{font-size:11px;color:var(--red);margin-top:8px;min-height:16px;}
+
+/* ── Header ── */
+header{background:var(--header);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,0.08);}
+.logo{font-family:var(--serif);font-size:1.25rem;color:#fff;letter-spacing:0.01em;}
+.logo-sub{font-size:10px;color:rgba(168,196,224,0.7);font-family:var(--mono);margin-left:12px;}
+.header-right{display:flex;align-items:center;gap:12px;}
+.search-wrap{position:relative;}
+.search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);opacity:0.45;pointer-events:none;}
+.search-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:7px;padding:6px 12px 6px 30px;font-size:12px;font-family:var(--sans);width:220px;outline:none;transition:border 0.15s;}
+.search-box:focus{border-color:rgba(255,255,255,0.35);}
+.search-box::placeholder{color:rgba(255,255,255,0.4);}
+.nav-link{color:rgba(168,196,224,0.8);font-size:10px;font-family:var(--mono);text-decoration:none;padding:5px 10px;border-radius:6px;transition:all 0.15s;}
+.nav-link:hover{background:rgba(255,255,255,0.1);color:#fff;}
+.nav-link.active{background:rgba(255,255,255,0.15);color:#fff;}
+
+/* ── Body ── */
+.body-wrap{display:flex;flex:1;min-height:0;}
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+.sidebar-section{padding:16px 12px 8px;}
+.sidebar-label{font-size:9.5px;font-weight:600;color:var(--muted);letter-spacing:0.9px;text-transform:uppercase;padding:0 8px;margin-bottom:6px;}
+.nav-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:12.5px;color:var(--muted);margin-bottom:2px;transition:all 0.15s;border:1px solid transparent;user-select:none;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--accent-light);color:var(--accent);border-color:rgba(44,82,130,0.2);}
+.nav-item .ni-left{display:flex;align-items:center;gap:8px;}
+.nav-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.nav-count{font-family:var(--mono);font-size:10px;background:var(--surface2);color:var(--muted);border-radius:4px;padding:1px 6px;border:1px solid var(--border);}
+.nav-item.active .nav-count{background:rgba(44,82,130,0.12);color:var(--accent);border-color:rgba(44,82,130,0.2);}
+.sidebar-divider{height:1px;background:var(--border);margin:8px 12px;}
+.sidebar-footer{padding:12px 16px;}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+.view-header{padding:14px 24px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--surface);}
+.view-title{font-family:var(--serif);font-size:1.1rem;color:var(--header);}
+.view-actions{display:flex;align-items:center;gap:8px;}
+.filter-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:5px 12px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all 0.15s;}
+.filter-btn:hover{background:var(--accent-light);color:var(--accent);border-color:rgba(44,82,130,0.25);}
+.filter-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+/* ── Summary ── */
+.summary-row{display:flex;gap:12px;padding:16px 24px;flex-shrink:0;overflow-x:auto;}
+.card{flex:1;min-width:130px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.card-red::before{background:var(--red);}
+.card-orange::before{background:var(--orange);}
+.card-blue::before{background:var(--accent);}
+.card-green::before{background:var(--green);}
+.card-label{font-size:10px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+.card-value{font-family:var(--mono);font-size:24px;font-weight:500;line-height:1;}
+.card-sub{font-size:10px;color:var(--muted);margin-top:4px;}
+.card-red .card-value{color:var(--red);}
+.card-orange .card-value{color:var(--orange);}
+.card-blue .card-value{color:var(--accent);}
+.card-green .card-value{color:var(--green);}
+
+/* ── Table ── */
+.table-wrap-outer{flex:1;overflow:auto;padding:0 24px 20px;}
+.table-container{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:4px;}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--surface2);}
+th{padding:10px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--muted);letter-spacing:0.6px;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+th:hover{color:var(--text);}
+td{padding:9px 14px;font-size:12px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+tr:hover{background:var(--surface2);}
+.sort-icon{font-size:9px;margin-left:3px;color:var(--border2);}
+.empty-msg{text-align:center;padding:52px 20px;color:var(--muted);font-size:13px;}
+
+/* ── Category badges ── */
+.cat-badge{font-size:9.5px;font-family:var(--mono);padding:3px 8px;border-radius:5px;font-weight:500;white-space:nowrap;}
+.cat-cancel-today{background:#fdecea;color:#c0392b;}
+.cat-cancel-pending{background:#fdf3e0;color:#BA7517;}
+.cat-reinstated{background:#e8f7f2;color:#1D9E75;}
+.cat-earned-due{background:#ebf0f8;color:#2c5282;}
+.cat-notice-sent{background:var(--surface2);color:var(--muted);}
+.line-badge{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);}
+.amount-cell{font-family:var(--mono);font-size:12px;text-align:right;font-weight:500;}
+.amount-high{color:var(--orange);}
+.amount-big{color:#7c3aed;}
+.date-cell{font-family:var(--mono);font-size:11px;}
+.date-overdue{color:var(--red);font-weight:600;}
+.date-soon{color:var(--orange);}
+
+/* ── Upload ── */
+.upload-btn{width:100%;background:var(--header);color:#fff;border:none;border-radius:7px;padding:8px 12px;font-size:12px;font-family:var(--sans);font-weight:500;cursor:pointer;transition:background 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;}
+.upload-btn:hover{background:var(--accent);}
+.clear-data-btn{width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all 0.15s;margin-top:6px;}
+.clear-data-btn:hover{background:#fef2f2;color:#c0392b;border-color:#f5c6c6;}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center;z-index:200;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:560px;max-height:80vh;overflow:auto;padding:28px;}
+.modal-title{font-family:var(--serif);font-size:1rem;color:var(--header);margin-bottom:16px;}
+.drop-zone{border:2px dashed var(--border2);border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:16px;}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:var(--accent-light);}
+.drop-label{font-size:13px;color:var(--muted);}
+.drop-label b{color:var(--accent);}
+.parse-status{font-size:11px;margin-bottom:10px;min-height:16px;}
+.parse-status.ok{color:var(--green);}
+.parse-status.err{color:var(--red);}
+.preview-wrap{display:none;max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;}
+.preview-wrap table{font-size:10px;}
+.preview-wrap th{font-size:9px;padding:6px 8px;}
+.preview-wrap td{padding:5px 8px;font-size:10px;}
+.load-btn{width:100%;background:var(--green);color:#fff;border:none;border-radius:7px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;}
+.load-btn:hover{opacity:0.9;}
+.load-btn:disabled{opacity:0.4;cursor:default;}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--header);color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;font-family:var(--sans);opacity:0;pointer-events:none;transition:all 0.3s ease;z-index:300;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── Responsive ── */
+@media(max-width:860px){
+  .sidebar{display:none;}
+  .table-wrap-outer{padding:0 12px 12px;}
+  th,td{padding:7px 8px;font-size:9.5px;}
+}
+@media(max-width:600px){
+  header{height:46px;padding:0 12px;}
+  .logo{font-size:1rem;}
+  .search-box{width:120px;font-size:10px;}
+  .summary-row{flex-direction:column;}
+  th,td{padding:6px 6px;font-size:9px;}
+}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">Meridian Insurance</div>
+    <div class="login-sub">Overdue Accounts</div>
+    <div class="login-label">Email</div>
+    <input class="login-input" id="login-email" type="email" placeholder="you@meridianins.com">
+    <div class="login-label">Password</div>
+    <input class="login-input" id="login-password" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <div style="display:flex;align-items:baseline;gap:0;">
+    <div class="logo">Meridian Insurance</div>
+    <div class="logo-sub">Overdue Accounts</div>
+  </div>
+  <div class="header-right">
+    <div class="search-wrap">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-box" type="text" placeholder="Search name, policy, account..." oninput="onSearch(this.value)" id="search-input">
+    </div>
+    <a href="index.html" class="nav-link">Expirations</a>
+    <a href="overdue.html" class="nav-link active">Overdue</a>
+    <a href="admin.html" id="admin-link" style="display:none;" class="nav-link">Admin</a>
+    <span id="user-name" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;font-family:var(--sans);padding:6px 12px;border-radius:7px;"></span>
+    <button id="logout-btn" onclick="doLogout()" style="display:none;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-family:var(--sans);padding:4px 10px;border-radius:5px;cursor:pointer;">Sign Out</button>
+  </div>
+</header>
+
+<div class="body-wrap">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div style="padding:14px 12px 6px;">
+      <div onclick="goHome()" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;cursor:pointer;font-family:var(--sans);font-size:12.5px;color:var(--header);font-weight:500;transition:all 0.15s;border:1px solid transparent;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Home
+      </div>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Categories</div>
+      <div class="nav-item active" onclick="setView('all')" id="nav-all">
+        <span class="ni-left"><span class="nav-dot" style="background:#b0b8c8;"></span>All Accounts</span>
+        <span class="nav-count" id="cnt-all">0</span>
+      </div>
+      <div class="nav-item" onclick="setView('cancel-today')" id="nav-cancel-today">
+        <span class="ni-left"><span class="nav-dot" style="background:#c0392b;"></span>Cancel Pending Today</span>
+        <span class="nav-count" id="cnt-cancel-today">0</span>
+      </div>
+      <div class="nav-item" onclick="setView('cancel-pending')" id="nav-cancel-pending">
+        <span class="ni-left"><span class="nav-dot" style="background:#BA7517;"></span>Still Cancel Pending</span>
+        <span class="nav-count" id="cnt-cancel-pending">0</span>
+      </div>
+      <div class="nav-item" onclick="setView('reinstated')" id="nav-reinstated">
+        <span class="ni-left"><span class="nav-dot" style="background:#1D9E75;"></span>Reinstated</span>
+        <span class="nav-count" id="cnt-reinstated">0</span>
+      </div>
+      <div class="nav-item" onclick="setView('earned-due')" id="nav-earned-due">
+        <span class="ni-left"><span class="nav-dot" style="background:#2c5282;"></span>Earned Premium Due</span>
+        <span class="nav-count" id="cnt-earned-due">0</span>
+      </div>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Line Type</div>
+      <div class="nav-item" onclick="setView('commercial')" id="nav-commercial">
+        <span class="ni-left"><span class="nav-dot" style="background:#4A90D9;"></span>Commercial</span>
+        <span class="nav-count" id="cnt-commercial">0</span>
+      </div>
+      <div class="nav-item" onclick="setView('personal')" id="nav-personal">
+        <span class="ni-left"><span class="nav-dot" style="background:#9d50dd;"></span>Personal</span>
+        <span class="nav-count" id="cnt-personal">0</span>
+      </div>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-footer">
+      <button class="upload-btn" onclick="openUpload()">&#x2B06; Upload Report</button>
+      <button class="clear-data-btn" onclick="clearAllData()">&#x1F5D1; Clear All Data</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="view-header">
+      <div class="view-title" id="view-title">All Accounts</div>
+      <div class="view-actions">
+        <button class="filter-btn active" onclick="setLineFilter('all')" id="lf-all">All</button>
+        <button class="filter-btn" onclick="setLineFilter('commercial')" id="lf-commercial">Commercial</button>
+        <button class="filter-btn" onclick="setLineFilter('personal')" id="lf-personal">Personal</button>
+      </div>
+    </div>
+
+    <div class="summary-row" id="summary-row"></div>
+
+    <div class="table-wrap-outer">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="sortBy('name')">Name <span class="sort-icon" id="si-name">&#x2195;</span></th>
+              <th onclick="sortBy('account')">Account # <span class="sort-icon" id="si-account">&#x2195;</span></th>
+              <th onclick="sortBy('policy')">Policy <span class="sort-icon" id="si-policy">&#x2195;</span></th>
+              <th onclick="sortBy('lineType')">Line <span class="sort-icon" id="si-lineType">&#x2195;</span></th>
+              <th onclick="sortBy('category')">Category <span class="sort-icon" id="si-category">&#x2195;</span></th>
+              <th onclick="sortBy('amount')" style="text-align:right;">Amount Due <span class="sort-icon" id="si-amount">&#x2195;</span></th>
+              <th onclick="sortBy('dueDate')">Due Date <span class="sort-icon" id="si-dueDate">&#x2195;</span></th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <tr><td colspan="7" class="empty-msg">No data loaded. Upload an Overdue Accounts report to get started.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal-overlay" id="upload-overlay" onclick="if(event.target===this)closeUpload()">
+  <div class="modal-box">
+    <div class="modal-title">Upload Overdue Accounts Report</div>
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="event.preventDefault();this.classList.remove('drag-over');handleFile(event.dataTransfer.files[0])">
+      <input type="file" id="file-input" accept=".pdf" style="display:none" onchange="handleFile(this.files[0])">
+      <div class="drop-label">Drop PDF here or <b>click to browse</b></div>
+    </div>
+    <div class="parse-status" id="parse-status"></div>
+    <div class="preview-wrap" id="preview-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Account</th><th>Policy</th><th>Line</th><th>Category</th><th>Amount</th><th>Due Date</th></tr></thead>
+        <tbody id="preview-body"></tbody>
+      </table>
+    </div>
+    <button class="load-btn" id="load-btn" onclick="confirmLoad()" disabled>Load Report</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ─── API & Auth ──────────────────────────────────────────────────────────────
+const API_URL = 'https://ep-dashboard-v2-backend-1.onrender.com';
+let MI_TOKEN = localStorage.getItem('mi_jwt');
+let MI_USER = null;
+let ACCOUNTS = [];
+let currentView = 'all';
+let lineFilter = 'all';
+let searchQuery = '';
+let sortCol = 'name';
+let sortDir = 1;
+
+function miApi(method, path, body){
+  const opts = { method, headers: { 'Content-Type':'application/json' } };
+  if(MI_TOKEN) opts.headers['Authorization'] = 'Bearer ' + MI_TOKEN;
+  if(body) opts.body = JSON.stringify(body);
+  return fetch(API_URL + path, opts).then(r => r.json()).catch(e => ({ error: 'Network error' }));
+}
+
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-password').value;
+  const err = document.getElementById('login-err');
+  if(!email||!pw){ err.textContent='Email and password required'; return; }
+  err.textContent='Signing in...';
+  const res = await miApi('POST','/api/auth/login',{email,password:pw});
+  if(res.error){ err.textContent=res.error; return; }
+  MI_TOKEN = res.token;
+  MI_USER = res.user;
+  localStorage.setItem('mi_jwt', MI_TOKEN);
+  await loadServerData();
+  showDashboard();
+}
+
+async function checkAuth(){
+  if(!MI_TOKEN){ document.getElementById('login-wrap').style.display='flex'; return; }
+  const res = await miApi('GET','/api/auth/me');
+  if(res.user){
+    MI_USER = res.user;
+    await loadServerData();
+    showDashboard();
+  } else {
+    localStorage.removeItem('mi_jwt');
+    MI_TOKEN = null;
+    document.getElementById('login-wrap').style.display='flex';
+  }
+}
+
+function doLogout(){
+  localStorage.removeItem('mi_jwt');
+  MI_TOKEN = null;
+  MI_USER = null;
+  document.getElementById('login-wrap').style.display='flex';
+}
+
+function showDashboard(){
+  document.getElementById('login-wrap').style.display='none';
+  document.getElementById('user-name').textContent = MI_USER.name.split(' ')[0];
+  document.getElementById('logout-btn').style.display = '';
+  if(MI_USER.role === 'admin') document.getElementById('admin-link').style.display = '';
+  updateCounts();
+  render();
+}
+
+async function loadServerData(){
+  const res = await miApi('GET','/api/overdue');
+  if(!res.error && res.accounts && res.accounts.length > 0){
+    ACCOUNTS = res.accounts;
+  } else {
+    ACCOUNTS = [];
+  }
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtMoney(v){ return '$'+Number(v||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(str){ if(!str) return ''; const d=new Date(str); return (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear(); }
+
+const CAT_CLASSES = {
+  'Cancel Pending Today':'cat-cancel-today',
+  'Still Cancel Pending':'cat-cancel-pending',
+  'Cancel Pending Reinstated':'cat-reinstated',
+  'Earned Premium Due':'cat-earned-due',
+  'Notice Sent Today':'cat-notice-sent'
+};
+
+const VIEW_TITLES = {
+  all:'All Accounts',
+  'cancel-today':'Cancel Pending Today',
+  'cancel-pending':'Still Cancel Pending',
+  reinstated:'Reinstated',
+  'earned-due':'Earned Premium Due',
+  commercial:'Commercial Lines',
+  personal:'Personal Lines'
+};
+
+// ─── Filter & Sort ───────────────────────────────────────────────────────────
+function getFiltered(){
+  let data = [...ACCOUNTS];
+  if(currentView==='cancel-today') data=data.filter(a=>a.category==='Cancel Pending Today');
+  else if(currentView==='cancel-pending') data=data.filter(a=>a.category==='Still Cancel Pending');
+  else if(currentView==='reinstated') data=data.filter(a=>a.category==='Cancel Pending Reinstated');
+  else if(currentView==='earned-due') data=data.filter(a=>a.category==='Earned Premium Due');
+  else if(currentView==='commercial') data=data.filter(a=>a.lineType==='Commercial');
+  else if(currentView==='personal') data=data.filter(a=>a.lineType==='Personal');
+
+  if(lineFilter!=='all') data=data.filter(a=>a.lineType.toLowerCase()===lineFilter);
+
+  if(searchQuery){
+    const q=searchQuery.toLowerCase();
+    data=data.filter(a=>
+      (a.name||'').toLowerCase().includes(q)||
+      (a.account||'').toLowerCase().includes(q)||
+      (a.policy||'').toLowerCase().includes(q)
+    );
+  }
+
+  data.sort((a,b)=>{
+    let av=a[sortCol],bv=b[sortCol];
+    if(sortCol==='amount'){av=Number(av)||0;bv=Number(bv)||0;}
+    else{av=String(av||'').toLowerCase();bv=String(bv||'').toLowerCase();}
+    if(av<bv) return -1*sortDir;
+    if(av>bv) return 1*sortDir;
+    return 0;
+  });
+  return data;
+}
+
+// ─── Render ──────────────────────────────────────────────────────────────────
+function render(){
+  const data = getFiltered();
+  renderCards(data);
+  renderTable(data);
+  updateSortIcons();
+}
+
+function renderCards(data){
+  const all = ACCOUNTS;
+  const cancelToday = all.filter(a=>a.category==='Cancel Pending Today').length;
+  const cancelPending = all.filter(a=>a.category==='Still Cancel Pending').length;
+  const earnedDue = all.filter(a=>a.category==='Earned Premium Due').length;
+  const totalAmt = data.reduce((s,a)=>s+(Number(a.amount)||0),0);
+
+  document.getElementById('summary-row').innerHTML=`
+    <div class="card card-red">
+      <div class="card-label">Cancel Pending Today</div>
+      <div class="card-value">${cancelToday}</div>
+      <div class="card-sub">Immediate action needed</div>
+    </div>
+    <div class="card card-orange">
+      <div class="card-label">Still Cancel Pending</div>
+      <div class="card-value">${cancelPending}</div>
+      <div class="card-sub">Awaiting resolution</div>
+    </div>
+    <div class="card card-blue">
+      <div class="card-label">Showing</div>
+      <div class="card-value">${data.length}</div>
+      <div class="card-sub">of ${all.length} total accounts</div>
+    </div>
+    <div class="card card-green">
+      <div class="card-label">Total Amount Due</div>
+      <div class="card-value" style="font-size:17px;">${fmtMoney(totalAmt)}</div>
+      <div class="card-sub">In current view</div>
+    </div>
+  `;
+}
+
+function renderTable(data){
+  const tbody = document.getElementById('table-body');
+  if(!data.length){
+    tbody.innerHTML='<tr><td colspan="7" class="empty-msg">No accounts match your filters.</td></tr>';
+    return;
+  }
+  const today = new Date(); today.setHours(0,0,0,0);
+  tbody.innerHTML = data.map(a=>{
+    const catCls = CAT_CLASSES[a.category]||'';
+    const amt = Number(a.amount)||0;
+    const amtCls = amt>=10000?'amount-cell amount-big':amt>=2000?'amount-cell amount-high':'amount-cell';
+    let dateCls = 'date-cell';
+    if(a.dueDate){
+      const dd = new Date(a.dueDate); dd.setHours(0,0,0,0);
+      if(dd < today) dateCls = 'date-cell date-overdue';
+      else if((dd - today) / 86400000 <= 7) dateCls = 'date-cell date-soon';
+    }
+    return `<tr>
+      <td style="font-weight:500;">${esc(a.name||'')}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--muted);">${esc(a.account||'')}</td>
+      <td style="font-family:var(--mono);font-size:10.5px;">${esc(a.policy||'')}</td>
+      <td><span class="line-badge">${esc(a.lineType||'')}</span></td>
+      <td><span class="cat-badge ${catCls}">${esc(a.category||'')}</span></td>
+      <td class="${amtCls}">${amt ? fmtMoney(amt) : ''}</td>
+      <td class="${dateCls}">${a.dueDate ? fmtDate(a.dueDate) : ''}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateSortIcons(){
+  const cols=['name','account','policy','lineType','category','amount','dueDate'];
+  cols.forEach(c=>{
+    const el=document.getElementById('si-'+c);
+    if(c===sortCol){if(el)el.textContent=sortDir===1?'\u2191':'\u2193';}
+    else{if(el)el.textContent='\u2195';}
+  });
+}
+
+function updateCounts(){
+  const all=ACCOUNTS;
+  document.getElementById('cnt-all').textContent=all.length;
+  document.getElementById('cnt-cancel-today').textContent=all.filter(a=>a.category==='Cancel Pending Today').length;
+  document.getElementById('cnt-cancel-pending').textContent=all.filter(a=>a.category==='Still Cancel Pending').length;
+  document.getElementById('cnt-reinstated').textContent=all.filter(a=>a.category==='Cancel Pending Reinstated').length;
+  document.getElementById('cnt-earned-due').textContent=all.filter(a=>a.category==='Earned Premium Due').length;
+  document.getElementById('cnt-commercial').textContent=all.filter(a=>a.lineType==='Commercial').length;
+  document.getElementById('cnt-personal').textContent=all.filter(a=>a.lineType==='Personal').length;
+}
+
+// ─── Actions ─────────────────────────────────────────────────────────────────
+function goHome(){
+  if(currentView==='all'&&lineFilter==='all'&&!searchQuery){ window.location.reload(); return; }
+  currentView='all'; lineFilter='all'; searchQuery='';
+  document.getElementById('search-input').value='';
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('lf-all')?.classList.add('active');
+  setView('all');
+}
+
+function setView(v){
+  currentView=v;
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const navEl=document.getElementById('nav-'+v);
+  if(navEl) navEl.classList.add('active');
+  document.getElementById('view-title').textContent=VIEW_TITLES[v]||v;
+  render();
+}
+
+function setLineFilter(m){
+  lineFilter=m;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('lf-'+m)?.classList.add('active');
+  render();
+}
+
+function onSearch(val){ searchQuery=val.trim(); render(); }
+function sortBy(col){ if(sortCol===col) sortDir*=-1; else{sortCol=col;sortDir=1;} render(); }
+
+// ─── Upload & Parse ──────────────────────────────────────────────────────────
+let _parsed = [];
+let _filename = '';
+
+function openUpload(){
+  _parsed=[];_filename='';
+  document.getElementById('file-input').value='';
+  document.getElementById('parse-status').textContent='';
+  document.getElementById('parse-status').className='parse-status';
+  document.getElementById('preview-wrap').style.display='none';
+  document.getElementById('load-btn').disabled=true;
+  document.getElementById('upload-overlay').classList.add('open');
+}
+function closeUpload(){ document.getElementById('upload-overlay').classList.remove('open'); }
+
+async function handleFile(file){
+  if(!file) return;
+  _filename = file.name;
+  setStatus('ok','Parsing '+file.name+'...');
+  try{
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    let allItems = [];
+    for(let i=1;i<=pdf.numPages;i++){
+      const page = await pdf.getPage(i);
+      const tc = await page.getTextContent();
+      allItems = allItems.concat(tc.items.map(it=>({
+        text:it.str, x:Math.round(it.transform[4]), y:Math.round(it.transform[5]),
+        w:Math.round(it.width), h:Math.round(it.height)
+      })));
+    }
+    // Build lines by Y position
+    const yGroups = {};
+    allItems.forEach(it=>{
+      if(!it.text.trim()) return;
+      const yk = Math.round(it.y/3)*3; // group nearby Y values
+      if(!yGroups[yk]) yGroups[yk]=[];
+      yGroups[yk].push(it);
+    });
+    const lines = Object.keys(yGroups).sort((a,b)=>b-a).map(y=>{
+      return yGroups[y].sort((a,b)=>a.x-b.x).map(it=>it.text.trim()).join('\t');
+    });
+    const fullText = lines.join('\n');
+    const accounts = parseOverdueText(fullText);
+    if(accounts.length===0){
+      setStatus('err','Could not parse any accounts from this PDF.');
+      return;
+    }
+    _parsed = accounts;
+    setStatus('ok', accounts.length+' accounts found');
+    showPreview(accounts);
+    document.getElementById('load-btn').disabled=false;
+  }catch(e){
+    console.error('Parse error:',e);
+    setStatus('err','Failed to parse PDF: '+e.message);
+  }
+}
+
+function parseOverdueText(text){
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const accounts = [];
+  let currentLineType = 'Commercial';
+  let currentCategory = '';
+  const catPatterns = [
+    { regex: /(\d+)\s+Accounts?\s+are\s+Cancel\s+Pending\s+Today/i, cat: 'Cancel Pending Today' },
+    { regex: /(\d+)\s+Accounts?\s+are\s+still\s+Cancel\s+Pending/i, cat: 'Still Cancel Pending' },
+    { regex: /(\d+)\s+Accounts?\s+are\s+Cancel\s+Pending\s+Reinstated/i, cat: 'Cancel Pending Reinstated' },
+    { regex: /(\d+)\s+Accounts?\s+had\s+Earned\s+Premium\s+Due\s+Notice\s+Sent/i, cat: 'Notice Sent Today' },
+    { regex: /(\d+)\s+Accounts?\s+with\s+Earned\s+Premium\s+Due\s+Awaiting/i, cat: 'Earned Premium Due' },
+  ];
+
+  for(let i=0;i<lines.length;i++){
+    const line = lines[i];
+    // Detect line type
+    if(/Commercial\s+Lines/i.test(line)){ currentLineType='Commercial'; continue; }
+    if(/Personal\s+Lines/i.test(line)){ currentLineType='Personal'; continue; }
+    // Detect category
+    let catMatch = false;
+    for(const p of catPatterns){
+      if(p.regex.test(line)){ currentCategory=p.cat; catMatch=true; break; }
+    }
+    if(catMatch) continue;
+    // Skip headers and meta
+    if(/^(Billing|Account|Name|Policy|Minimum|Due|Amount|Showing|No results)/i.test(line)) continue;
+    if(/^Overdue Accounts/i.test(line)) continue;
+    if(/change$/i.test(line)) continue;
+
+    // Try to find account rows - lines starting with a numeric account number
+    const parts = line.split('\t');
+    // Look for account number (6-12 digit number)
+    const acctMatch = parts[0] && /^\d{6,12}$/.test(parts[0].trim());
+    if(acctMatch && currentCategory){
+      const account = parts[0].trim();
+      // Gather remaining fields from this line and potentially following lines
+      let name='', policy='', amount=0, dueDate='';
+      // Parse the rest of the tab-separated values
+      for(let j=1;j<parts.length;j++){
+        const p = parts[j].trim();
+        if(!p) continue;
+        if(/^\$[\d,.]+$/.test(p)){ amount = parseFloat(p.replace(/[$,]/g,'')); }
+        else if(/^\d{2}\/\d{2}\/\d{4}$/.test(p)){ dueDate = p; }
+        else if(/^[A-Z\-]+\s*[•·]\s*.+/.test(p)){ policy = p.replace(/\s*[•·]\s*/,' '); }
+        else if(!name){ name = p; }
+        else if(!policy && /[A-Z]/.test(p)){
+          // Could be continuation of name or policy
+          if(p.includes('•') || p.includes('·')){ policy = p.replace(/\s*[•·]\s*/,' '); }
+          else { name += ' ' + p; }
+        }
+      }
+      // Clean up name
+      name = name.replace(/\s+/g,' ').trim();
+      if(name || policy){
+        accounts.push({
+          name, account, policy: policy.replace(/\s*\+\s*\d+\s*more/i,'').trim(),
+          lineType: currentLineType, category: currentCategory,
+          amount: amount||0, dueDate: dueDate||''
+        });
+      }
+    }
+  }
+  return accounts;
+}
+
+function showPreview(accounts){
+  const preview = accounts.slice(0,8);
+  document.getElementById('preview-body').innerHTML = preview.map(a=>`
+    <tr>
+      <td>${esc(a.name)}</td>
+      <td>${esc(a.account)}</td>
+      <td>${esc(a.policy)}</td>
+      <td>${esc(a.lineType)}</td>
+      <td>${esc(a.category)}</td>
+      <td>${a.amount?fmtMoney(a.amount):''}</td>
+      <td>${a.dueDate||''}</td>
+    </tr>
+  `).join('');
+  document.getElementById('preview-wrap').style.display='block';
+}
+
+function confirmLoad(){
+  if(!_parsed.length) return;
+  ACCOUNTS = _parsed;
+  miApi('PUT','/api/overdue',{ accounts: _parsed, meta:{ filename:_filename, count:_parsed.length, loadedAt: new Date().toLocaleDateString() }});
+  closeUpload();
+  updateCounts();
+  render();
+  showToast(_parsed.length+' accounts loaded from "'+_filename+'"');
+}
+
+function clearAllData(){
+  if(!confirm('Clear all overdue account data? This cannot be undone.')) return;
+  ACCOUNTS=[];
+  miApi('DELETE','/api/overdue');
+  updateCounts();
+  render();
+  showToast('All data cleared');
+}
+
+function setStatus(type,msg){
+  const el=document.getElementById('parse-status');
+  el.className='parse-status '+type;
+  el.textContent=msg;
+}
+
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+checkAuth();
+</script>
+</body>
+</html>
