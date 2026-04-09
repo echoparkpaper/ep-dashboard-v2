@@ -70,7 +70,8 @@ header{background:var(--header);padding:0 24px;height:54px;display:flex;align-it
 
 /* ── Summary ── */
 .summary-row{display:flex;gap:12px;padding:16px 24px;flex-shrink:0;overflow-x:auto;}
-.card{flex:1;min-width:130px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;position:relative;overflow:hidden;}
+.card{flex:1;min-width:130px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;position:relative;overflow:hidden;cursor:pointer;transition:all 0.15s;}
+.card:hover{border-color:var(--border2);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
 .card-red::before{background:var(--red);}
 .card-orange::before{background:var(--orange);}
@@ -448,22 +449,22 @@ function renderCards(data){
   const totalAmt = data.reduce((s,a)=>s+(Number(a.amount)||0),0);
 
   document.getElementById('summary-row').innerHTML=`
-    <div class="card card-red">
+    <div class="card card-red" onclick="setView('cancel-today')">
       <div class="card-label">Cancel Pending Today</div>
       <div class="card-value">${cancelToday}</div>
       <div class="card-sub">Immediate action needed</div>
     </div>
-    <div class="card card-orange">
+    <div class="card card-orange" onclick="setView('cancel-pending')">
       <div class="card-label">Still Cancel Pending</div>
       <div class="card-value">${cancelPending}</div>
       <div class="card-sub">Awaiting resolution</div>
     </div>
-    <div class="card card-blue">
+    <div class="card card-blue" onclick="setView('all')">
       <div class="card-label">Showing</div>
       <div class="card-value">${data.length}</div>
       <div class="card-sub">of ${all.length} total accounts</div>
     </div>
-    <div class="card card-green">
+    <div class="card card-green" onclick="setView('earned-due')">
       <div class="card-label">Total Amount Due</div>
       <div class="card-value" style="font-size:17px;">${fmtMoney(totalAmt)}</div>
       <div class="card-sub">In current view</div>
