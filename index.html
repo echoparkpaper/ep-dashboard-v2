@@ -1996,14 +1996,15 @@ const CARRIERS = [
   {
     name: 'WCF',
     match: ico => /^WCF/i.test(String(ico||'')),
-    buildUrl: policyNo => {
+    buildUrl: () => {
+      // WCF requires account ID in the URL to deep-link to a policy, which we don't have.
+      // Best we can do: open the user's agent dashboard (or portal home) + clipboard copy.
       const agentId = (MI_USER && MI_USER.wcf_agent_id) ? String(MI_USER.wcf_agent_id).trim() : '';
-      if(agentId){
-        return 'https://www.wcf.com/portal/agent/'+encodeURIComponent(agentId)+'/policy/'+encodeURIComponent(String(policyNo||'').replace(/[-\s\/]/g,''));
-      }
-      return 'https://www.wcf.com/portal/agent';
+      return agentId
+        ? 'https://www.wcf.com/portal/agent/'+encodeURIComponent(agentId)
+        : 'https://www.wcf.com/portal/agent';
     },
-    deepLink: () => !!(MI_USER && MI_USER.wcf_agent_id)
+    deepLink: false
   },
   {
     name: 'Cincinnati Insurance',
