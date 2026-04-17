@@ -1941,19 +1941,52 @@ const WF_CLASSES = {'Not Started':'wf-not-started', 'In Progress':'wf-in-progres
 
 function safeAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function isAutoOwners(ico){
-  const i = String(ico||'').toUpperCase();
-  return i.startsWith('AUTOW') || i.includes('AUTO OWNERS') || i === 'AO';
+// Carrier portal configuration. Each returns {url, deepLink} where deepLink=true
+// means the URL goes directly to the policy; deepLink=false means portal home + clipboard copy.
+const CARRIERS = [
+  {
+    name: 'Auto Owners',
+    match: ico => /^AUTOW|AUTO.OWNERS|^AO$/i.test(String(ico||'')),
+    buildUrl: policyNo => 'https://www.aoins.com/ose/customer/customer-dashboard/#/policy-dashboard/policy/'+encodeURIComponent(String(policyNo||'').replace(/[-\s\/]/g,'')),
+    deepLink: true
+  },
+  {
+    name: 'WCF',
+    match: ico => /^WCF/i.test(String(ico||'')),
+    buildUrl: () => 'https://www.wcf.com/portal/agent',
+    deepLink: false
+  },
+  {
+    name: 'Cincinnati Insurance',
+    match: ico => /^CIC|CINC/i.test(String(ico||'')),
+    buildUrl: () => 'https://www.cinfin.com/cincinnati-insurance-agents',
+    deepLink: false
+  }
+];
+
+function getCarrier(ico){
+  return CARRIERS.find(c => c.match(ico));
 }
 
-function autoOwnersUrl(policyNo){
-  const stripped = String(policyNo||'').replace(/[-\s\/]/g,'');
-  return 'https://www.aoins.com/ose/customer/customer-dashboard/#/policy-dashboard/policy/'+encodeURIComponent(stripped);
+function openCarrierLink(policyNo, ico){
+  const carrier = getCarrier(ico);
+  if(!carrier) return;
+  const url = carrier.buildUrl(policyNo);
+  if(!carrier.deepLink){
+    // Copy policy number to clipboard for manual search
+    try{
+      navigator.clipboard.writeText(String(policyNo||'').trim());
+      showToast('Policy # copied to clipboard — paste in '+carrier.name+' search');
+    }catch(e){}
+  }
+  window.open(url, '_blank', 'noopener');
 }
 
 function policyCell(policyNo, ico){
-  if(isAutoOwners(ico)){
-    return '<a href="'+autoOwnersUrl(policyNo)+'" target="_blank" rel="noopener" class="policy-link" title="Open in Auto Owners">'+esc(policyNo)+' <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>';
+  const carrier = getCarrier(ico);
+  if(carrier){
+    const title = carrier.deepLink ? 'Open in '+carrier.name : 'Open '+carrier.name+' portal (policy # copied to clipboard)';
+    return '<a href="javascript:void(0)" onclick="openCarrierLink(\''+safeAttr(policyNo)+'\',\''+safeAttr(ico)+'\')" class="policy-link" title="'+title+'">'+esc(policyNo)+' <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>';
   }
   return '<span class="policy-no">'+esc(policyNo)+'</span>';
 }
