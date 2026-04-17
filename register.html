@@ -34,7 +34,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
   <div class="label">Password</div>
   <input class="input" id="password" type="password" placeholder="Min 6 characters">
   <div class="label">Confirm Password</div>
-  <input class="input" id="password2" type="password" placeholder="Confirm password" onkeydown="if(event.key==='Enter')doRegister()">
+  <input class="input" id="password2" type="password" placeholder="Confirm password">
+  <div class="label">WCF Agent ID <span style="text-transform:none;letter-spacing:0;font-weight:400;">(optional)</span></div>
+  <input class="input" id="wcf-agent-id" type="text" placeholder="e.g. 18655122" onkeydown="if(event.key==='Enter')doRegister()">
   <button class="btn" onclick="doRegister()">Create Account</button>
   <div class="err" id="err"></div>
   <a class="link" href="index.html">Already have an account? Sign In</a>
@@ -52,7 +54,8 @@ async function doRegister(){
   if(pw.length < 6){ err.textContent='Password must be at least 6 characters'; return; }
   err.textContent='Creating account...';
   try {
-    const res = await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,name,password:pw})});
+    const wcf_agent_id = document.getElementById('wcf-agent-id').value.trim();
+    const res = await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,name,password:pw,wcf_agent_id})});
     const data = await res.json();
     if(data.error){ err.textContent=data.error; return; }
     localStorage.setItem('mi_jwt', data.token);

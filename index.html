@@ -833,7 +833,7 @@ footer{
     <a href="index.html" style="color:#fff;font-size:10px;font-family:var(--mono);text-decoration:none;padding:5px 10px;border-radius:6px;background:rgba(255,255,255,0.15);">Expirations</a>
     <a href="overdue.html" style="color:rgba(168,196,224,0.8);font-size:10px;font-family:var(--mono);text-decoration:none;padding:5px 10px;border-radius:6px;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='rgba(168,196,224,0.8)'">Overdue</a>
     <a href="admin.html" id="admin-link" style="display:none;color:rgba(168,196,224,0.8);font-size:10px;font-family:var(--mono);text-decoration:none;padding:5px 10px;border-radius:6px;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='rgba(168,196,224,0.8)'">Admin</a>
-    <span id="user-name" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;font-family:var(--sans);padding:6px 12px;border-radius:7px;"></span>
+    <button id="user-name" onclick="openSettings()" title="Account settings" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;font-family:var(--sans);padding:6px 12px;border-radius:7px;cursor:pointer;"></button>
     <button id="logout-btn" onclick="doLogout()" style="display:none;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-family:var(--sans);padding:4px 10px;border-radius:5px;cursor:pointer;">Sign Out</button>
   </div>
 </header>
@@ -1082,6 +1082,21 @@ footer{
   </div>
 </div>
 
+<!-- Settings Modal -->
+<div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:400;align-items:center;justify-content:center;" onclick="if(event.target===this)closeSettings()">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:400px;padding:28px;box-shadow:0 20px 50px rgba(0,0,0,0.15);">
+    <div style="font-family:var(--serif);font-size:1rem;color:var(--header);margin-bottom:16px;">Account Settings</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.5;">Your WCF Agent ID is used to open WCF policies directly. Leave empty to use portal search with clipboard copy.</div>
+    <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;">WCF Agent ID</div>
+    <input id="settings-wcf-agent-id" type="text" placeholder="e.g. 18655122" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;font-family:var(--sans);color:var(--text);outline:none;margin-bottom:12px;">
+    <div id="settings-msg" style="font-size:11px;min-height:16px;margin-bottom:4px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+      <button onclick="closeSettings()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 16px;font-size:12px;color:var(--muted);cursor:pointer;font-family:var(--sans);">Cancel</button>
+      <button onclick="saveSettings()" style="background:var(--accent);border:none;border-radius:6px;padding:7px 16px;font-size:12px;color:#fff;cursor:pointer;font-family:var(--sans);font-weight:500;">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -1141,6 +1156,34 @@ function doLogout(){
   MI_TOKEN = null;
   MI_USER = null;
   document.getElementById('login-wrap').style.display='flex';
+}
+
+function openSettings(){
+  document.getElementById('settings-wcf-agent-id').value = (MI_USER && MI_USER.wcf_agent_id) || '';
+  document.getElementById('settings-msg').textContent = '';
+  document.getElementById('settings-msg').style.color = '';
+  document.getElementById('settings-overlay').style.display = 'flex';
+}
+
+function closeSettings(){
+  document.getElementById('settings-overlay').style.display = 'none';
+}
+
+async function saveSettings(){
+  const wcf_agent_id = document.getElementById('settings-wcf-agent-id').value.trim();
+  const msg = document.getElementById('settings-msg');
+  msg.textContent = 'Saving...';
+  msg.style.color = 'var(--muted)';
+  const res = await miApi('PUT','/api/auth/settings',{ wcf_agent_id });
+  if(res.error){
+    msg.textContent = res.error;
+    msg.style.color = 'var(--red)';
+    return;
+  }
+  MI_USER = res.user;
+  msg.textContent = 'Saved';
+  msg.style.color = 'var(--green)';
+  setTimeout(()=>{ closeSettings(); render(); }, 600);
 }
 
 function showDashboard(){
@@ -1953,8 +1996,14 @@ const CARRIERS = [
   {
     name: 'WCF',
     match: ico => /^WCF/i.test(String(ico||'')),
-    buildUrl: policyNo => 'https://www.wcf.com/portal/agent/18655122/policy/'+encodeURIComponent(String(policyNo||'').replace(/[-\s\/]/g,'')),
-    deepLink: true
+    buildUrl: policyNo => {
+      const agentId = (MI_USER && MI_USER.wcf_agent_id) ? String(MI_USER.wcf_agent_id).trim() : '';
+      if(agentId){
+        return 'https://www.wcf.com/portal/agent/'+encodeURIComponent(agentId)+'/policy/'+encodeURIComponent(String(policyNo||'').replace(/[-\s\/]/g,''));
+      }
+      return 'https://www.wcf.com/portal/agent';
+    },
+    deepLink: () => !!(MI_USER && MI_USER.wcf_agent_id)
   },
   {
     name: 'Cincinnati Insurance',
@@ -1968,12 +2017,15 @@ function getCarrier(ico){
   return CARRIERS.find(c => c.match(ico));
 }
 
+function isDeepLink(carrier){
+  return typeof carrier.deepLink === 'function' ? carrier.deepLink() : !!carrier.deepLink;
+}
+
 function openCarrierLink(policyNo, ico){
   const carrier = getCarrier(ico);
   if(!carrier) return;
   const url = carrier.buildUrl(policyNo);
-  if(!carrier.deepLink){
-    // Copy policy number to clipboard for manual search
+  if(!isDeepLink(carrier)){
     try{
       navigator.clipboard.writeText(String(policyNo||'').trim());
       showToast('Policy # copied to clipboard — paste in '+carrier.name+' search');
@@ -1985,7 +2037,8 @@ function openCarrierLink(policyNo, ico){
 function policyCell(policyNo, ico){
   const carrier = getCarrier(ico);
   if(carrier){
-    const title = carrier.deepLink ? 'Open in '+carrier.name : 'Open '+carrier.name+' portal (policy # copied to clipboard)';
+    const deep = isDeepLink(carrier);
+    const title = deep ? 'Open in '+carrier.name : 'Open '+carrier.name+' portal (policy # copied to clipboard)';
     return '<a href="javascript:void(0)" onclick="openCarrierLink(\''+safeAttr(policyNo)+'\',\''+safeAttr(ico)+'\')" class="policy-link" title="'+title+'">'+esc(policyNo)+' <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>';
   }
   return '<span class="policy-no">'+esc(policyNo)+'</span>';

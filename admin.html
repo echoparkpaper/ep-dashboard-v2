@@ -162,6 +162,8 @@ tr:last-child td{border-bottom:none;}
     <input class="form-input" id="m-password" type="password" placeholder="Min 6 characters">
     <div class="form-label">Role</div>
     <select class="form-select" id="m-role"><option value="user">User</option><option value="admin">Admin</option></select>
+    <div class="form-label">WCF Agent ID <span style="text-transform:none;letter-spacing:0;color:var(--muted);font-weight:400;">(optional)</span></div>
+    <input class="form-input" id="m-wcf-agent-id" placeholder="e.g. 18655122">
     <div class="form-err" id="m-err"></div>
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeModal()">Cancel</button>
@@ -272,7 +274,7 @@ async function loadUsers(){
       <td><span class="role-badge role-${u.role}">${u.role}</span></td>
       <td class="date-text">${date}</td>
       <td>
-        <button class="action-btn" onclick="openEditModal(${u.id},'${esc(u.name)}','${esc(u.email)}','${u.role}')">Edit</button>
+        <button class="action-btn" onclick="openEditModal(${u.id},'${esc(u.name)}','${esc(u.email)}','${u.role}','${esc(u.wcf_agent_id||'')}')">Edit</button>
         <button class="action-btn" onclick="openReset(${u.id},'${esc(u.name)}')">Reset PW</button>
         ${isSelf ? '' : `<button class="action-btn danger" onclick="deleteUser(${u.id},'${esc(u.name)}')">Delete</button>`}
       </td>
@@ -290,6 +292,7 @@ function openCreateModal(){
   document.getElementById('m-email').value = '';
   document.getElementById('m-password').value = '';
   document.getElementById('m-role').value = 'user';
+  document.getElementById('m-wcf-agent-id').value = '';
   document.getElementById('m-pw-label').style.display = '';
   document.getElementById('m-password').style.display = '';
   document.getElementById('m-save').textContent = 'Create';
@@ -297,12 +300,13 @@ function openCreateModal(){
   document.getElementById('modal-overlay').classList.add('open');
 }
 
-function openEditModal(id, name, email, role){
+function openEditModal(id, name, email, role, wcfAgentId){
   editingId = id;
   document.getElementById('modal-title').textContent = 'Edit User';
   document.getElementById('m-name').value = name;
   document.getElementById('m-email').value = email;
   document.getElementById('m-role').value = role;
+  document.getElementById('m-wcf-agent-id').value = wcfAgentId || '';
   document.getElementById('m-pw-label').style.display = 'none';
   document.getElementById('m-password').style.display = 'none';
   document.getElementById('m-password').value = '';
@@ -318,16 +322,17 @@ async function saveUser(){
   const email = document.getElementById('m-email').value.trim();
   const password = document.getElementById('m-password').value;
   const role = document.getElementById('m-role').value;
+  const wcf_agent_id = document.getElementById('m-wcf-agent-id').value.trim();
   const err = document.getElementById('m-err');
   if(!name || !email){ err.textContent='Name and email required'; return; }
 
   if(editingId){
-    const res = await api('PUT','/api/admin/users/'+editingId,{name,email,role});
+    const res = await api('PUT','/api/admin/users/'+editingId,{name,email,role,wcf_agent_id});
     if(res.error){ err.textContent=res.error; return; }
     showToast('User updated');
   } else {
     if(!password || password.length < 6){ err.textContent='Password must be at least 6 characters'; return; }
-    const res = await api('POST','/api/admin/users',{name,email,password,role});
+    const res = await api('POST','/api/admin/users',{name,email,password,role,wcf_agent_id});
     if(res.error){ err.textContent=res.error; return; }
     showToast('User created');
   }
