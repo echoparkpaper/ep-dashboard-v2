@@ -864,7 +864,8 @@ function parseOverdueItems(items){
   const accounts = [];
   let lineType = 'Commercial';
   let category = '';
-  let current = null; // current account being built
+  let current = null;
+  let pendingItems = []; // name/policy items seen before an account # — attach to next account
 
   const catPatterns = [
     { re:/Cancel\s+Pending\s+Today/i, cat:'Cancel Pending Today' },
@@ -874,7 +875,7 @@ function parseOverdueItems(items){
     { re:/Earned\s+Premium\s+Due\s+Awaiting/i, cat:'Earned Premium Due' },
   ];
 
-  // First pass: build lines (group items within 3px Y on same page)
+  // Build lines by Y proximity within a page
   const lines = [];
   let lineBuf = [];
   let lastY = null, lastPage = null;
@@ -891,54 +892,80 @@ function parseOverdueItems(items){
 
   function flush(){
     if(current && (current.name||current.policy)){
-      current.name = current.name.replace(/\s+/g,' ').trim();
-      current.policy = current.policy.replace(/\s+/g,' ').replace(/\s*\+\s*\d+\s*more/i,'').replace(/[•·]/g,' ').replace(/\s+/g,' ').trim();
+      current.name = cleanName(current.name);
+      current.policy = cleanPolicy(current.policy);
       accounts.push({...current});
     }
     current = null;
   }
 
+  function isSkipLine(text){
+    if(/^(Billing|Name|Policy|Minimum|Due\b|Amount|Showing|No\s+results|Overdue\s+Accounts|Account$)/i.test(text)) return true;
+    if(/^Page\s+\d+\s+of\s+\d+$/i.test(text)) return true;
+    if(/change$/i.test(text)) return true;
+    if(/^\d{2}-\d{4}-\d{2}\s+\(OREM\)/i.test(text)) return true; // agency header like "43-0110-00 (OREM)"
+    return false;
+  }
+
   for(const line of lines){
-    const allText = line.items.map(i=>i.text).join(' ');
+    const allText = line.items.map(i=>i.text).join(' ').trim();
 
-    // Detect line type changes
-    if(/Commercial\s+Lines/i.test(allText)){ flush(); lineType='Commercial'; continue; }
-    if(/Personal\s+Lines/i.test(allText)){ flush(); lineType='Personal'; continue; }
+    // Line type changes
+    if(/Commercial\s+Lines/i.test(allText)){ flush(); pendingItems=[]; lineType='Commercial'; continue; }
+    if(/Personal\s+Lines/i.test(allText)){ flush(); pendingItems=[]; lineType='Personal'; continue; }
 
-    // Detect category changes
+    // Category changes
     let catHit = false;
     for(const cp of catPatterns){
-      if(cp.re.test(allText)){ flush(); category=cp.cat; catHit=true; break; }
+      if(cp.re.test(allText)){ flush(); pendingItems=[]; category=cp.cat; catHit=true; break; }
     }
     if(catHit) continue;
 
-    // Skip non-data lines
-    if(/^(Billing|Name|Policy|Minimum|Due\b|Amount|Showing|No results|Overdue\s+Accounts)/i.test(allText)) continue;
-    if(/^Account$/i.test(allText.trim())) continue;
-    if(/change$/i.test(allText)) continue;
+    // Skip header/footer lines
+    if(isSkipLine(allText)) continue;
     if(!category) continue;
 
-    // Check if this line contains an account number (x < 120, 6-9 digit number)
+    // Account number row
     const acctItem = line.items.find(it=> it.x < 120 && /^\d{6,9}$/.test(it.text));
 
     if(acctItem){
-      // New account row found — flush previous
       flush();
       current = { name:'', account:acctItem.text, policy:'', lineType, category, amount:0, dueDate:'' };
-      // Process other items on this same line by X position
+      // Apply any buffered name/policy items from the rows above
+      for(const it of pendingItems) classifyItem(it, current);
+      pendingItems = [];
+      // Then this line's items (excluding account #)
       for(const it of line.items){
         if(it === acctItem) continue;
         classifyItem(it, current);
       }
     } else if(current){
-      // Continuation line — add data to current account
+      // Continuation line for the current account
+      for(const it of line.items) classifyItem(it, current);
+    } else {
+      // Before any account — buffer name/policy items for the next one
       for(const it of line.items){
-        classifyItem(it, current);
+        if(it.x >= 140) pendingItems.push(it);
       }
     }
   }
   flush();
   return accounts;
+}
+
+function cleanName(s){
+  return String(s||'').replace(/\s+/g,' ').trim();
+}
+
+function cleanPolicy(s){
+  return String(s||'')
+    .replace(/Page\s+\d+\s+of\s+\d+/gi,'')
+    .replace(/\s*\+\s*\d+\s*more/gi,'')
+    .replace(/[•·\u2022]/g,' ')
+    .replace(/-\s+/g,'-')       // fix "A106- 705-015" → "A106-705-015"
+    .replace(/\s+-/g,'-')
+    .replace(/\s+/g,' ')
+    .trim();
 }
 
 function classifyItem(it, acct){
@@ -955,14 +982,15 @@ function classifyItem(it, acct){
     acct.dueDate = t;
     return;
   }
-  // Skip bullets and "more"
-  if(t==='•'||t==='·'||t==='more') return;
+  // Skip bullets and "more" and page markers
+  if(t==='•'||t==='·'||t==='\u2022'||t.toLowerCase()==='more') return;
+  if(/^Page\s+\d+\s+of\s+\d+$/i.test(t)) return;
+  if(/^Page$/i.test(t) || /^of$/i.test(t)) return;
   // Skip header words that leak through
-  if(/^(Billing|Account|Name|Policy|Minimum|Due|Amount|Showing|of)$/i.test(t)) return;
+  if(/^(Billing|Account|Name|Policy|Minimum|Due|Amount|Showing)$/i.test(t)) return;
 
   // Policy area: x >= 250 (policy types, numbers, fragments)
   if(x >= 250){
-    // Policy type or number fragment
     acct.policy = acct.policy ? acct.policy+' '+t : t;
     return;
   }
