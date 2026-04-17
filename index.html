@@ -1953,8 +1953,8 @@ const CARRIERS = [
   {
     name: 'WCF',
     match: ico => /^WCF/i.test(String(ico||'')),
-    buildUrl: () => 'https://www.wcf.com/portal/agent',
-    deepLink: false
+    buildUrl: policyNo => 'https://www.wcf.com/portal/agent/18655122/policy/'+encodeURIComponent(String(policyNo||'').replace(/[-\s\/]/g,'')),
+    deepLink: true
   },
   {
     name: 'Cincinnati Insurance',
