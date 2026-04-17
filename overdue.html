@@ -992,12 +992,23 @@ function showPreview(accounts){
 
 function confirmLoad(){
   if(!_parsed.length) return;
-  ACCOUNTS = _parsed;
-  miApi('PUT','/api/overdue',{ accounts: _parsed, meta:{ filename:_filename, count:_parsed.length, loadedAt: new Date().toLocaleDateString() }});
+  // Skip accounts already marked as Done on the server (keyed by account|policy)
+  const doneKeys = new Set(
+    Object.entries(serverWorkflow || {})
+      .filter(([, status]) => status === 'Done')
+      .map(([key]) => key)
+  );
+  const incoming = _parsed.filter(a => !doneKeys.has(a.account+'|'+a.policy));
+  const skipped = _parsed.length - incoming.length;
+  ACCOUNTS = incoming;
+  miApi('PUT','/api/overdue',{ accounts: incoming, meta:{ filename:_filename, count:incoming.length, loadedAt: new Date().toLocaleDateString() }});
   closeUpload();
   updateCounts();
   render();
-  showToast(_parsed.length+' accounts loaded from "'+_filename+'"');
+  const msg = skipped > 0
+    ? incoming.length+' accounts loaded from "'+_filename+'" ('+skipped+' skipped — already Done)'
+    : incoming.length+' accounts loaded from "'+_filename+'"';
+  showToast(msg);
 }
 
 let _clearBackup = null;
