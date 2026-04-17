@@ -160,6 +160,10 @@ tr:hover{background:var(--surface2);}
 .cat-earned-due{background:#2c5282;color:#fff;}
 .cat-notice-sent{background:#c9954c;color:#fff;}
 .line-badge{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);}
+.policy-link{font-family:var(--mono);font-size:10.5px;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:3px;transition:color 0.15s;cursor:pointer;}
+.policy-link:hover{color:var(--header);text-decoration:underline;}
+.policy-link svg{opacity:0.6;transition:opacity 0.15s;}
+.policy-link:hover svg{opacity:1;}
 .amount-cell{font-family:var(--mono);font-size:12px;text-align:right;font-weight:500;}
 .amount-high{color:var(--orange);}
 .amount-big{color:#7c3aed;}
@@ -592,7 +596,7 @@ function renderTable(data){
     return `<tr>
       <td style="font-weight:500;">${esc(a.name||'')}</td>
       <td style="font-family:var(--mono);font-size:10px;color:var(--muted);">${esc(a.account||'')}</td>
-      <td style="font-family:var(--mono);font-size:10.5px;">${esc(a.policy||'')}</td>
+      <td>${policyCell(a.policy||'')}</td>
       <td><span class="line-badge">${esc(a.lineType||'')}</span></td>
       <td><span class="cat-badge ${catCls}">${esc(a.category||'')}</span></td>
       <td class="${amtCls}">${amt ? fmtMoney(amt) : ''}</td>
@@ -676,6 +680,16 @@ function autoPriority(dueDate){
 }
 
 function safeAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function policyCell(policyText){
+  // Overdue accounts come from Auto Owners so all policies are Auto Owners
+  // Extract the policy number (strip line type prefix and bullet, strip dashes for URL)
+  const clean = String(policyText||'').replace(/^[A-Z\-]+\s*[•·]\s*/i,'').trim();
+  const stripped = clean.replace(/[-\s\/]/g,'');
+  if(!stripped) return '<span style="font-family:var(--mono);font-size:10.5px;">'+esc(policyText||'')+'</span>';
+  const url = 'https://www.aoins.com/ose/customer/customer-dashboard/#/policy-dashboard/policy/'+encodeURIComponent(stripped);
+  return '<a href="'+url+'" target="_blank" rel="noopener" class="policy-link" title="Open in Auto Owners">'+esc(policyText||'')+' <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>';
+}
 
 function priSelect(key, dueDate){
   const val = serverManualPri[key] ? (serverPriority[key]||autoPriority(dueDate)) : autoPriority(dueDate);

@@ -293,6 +293,10 @@ tr.row-soon:hover td{background:rgba(186,117,23,0.07);}
 
 .ico-text{font-family:var(--mono);font-size:10.5px;color:var(--muted);}
 .policy-no{font-family:var(--mono);font-size:11px;color:var(--text);}
+.policy-link{font-family:var(--mono);font-size:11px;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:3px;transition:color 0.15s;cursor:pointer;}
+.policy-link:hover{color:var(--header);text-decoration:underline;}
+.policy-link svg{opacity:0.6;transition:opacity 0.15s;}
+.policy-link:hover svg{opacity:1;}
 .premium-cell{font-family:var(--mono);font-size:12px;text-align:right;font-weight:500;}
 .premium-high{color:var(--orange);}
 .premium-big{color:#7c3aed;}
@@ -1389,7 +1393,7 @@ function renderTable(data){
       <td><span class="status-badge ${sClass}">${p.status}</span></td>
       <td style="font-family:var(--mono);font-size:11px;color:var(--muted);">${p.billMode==='D'?'Direct':'Agency'}</td>
       <td><span class="ico-text">${esc(p.ico)}</span></td>
-      <td><span class="policy-no">${esc(p.policyNo)}</span></td>
+      <td>${policyCell(p.policyNo, p.ico)}</td>
       <td class="${pClass}">${fmtPrem(p.premium)}</td>
       <td style="text-align:center;">${priSelect(p.policyNo, p.days)}</td>
       <td style="text-align:center;">${showingDone ? restoreBtn(p.policyNo) : wfSelect(p.policyNo, p.workflow)}</td>
@@ -1936,6 +1940,23 @@ const WF_OPTIONS = ['Not Started','In Progress','Done'];
 const WF_CLASSES = {'Not Started':'wf-not-started', 'In Progress':'wf-in-progress', 'Done':'wf-done'};
 
 function safeAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function isAutoOwners(ico){
+  const i = String(ico||'').toUpperCase();
+  return i.startsWith('AUTOW') || i.includes('AUTO OWNERS') || i === 'AO';
+}
+
+function autoOwnersUrl(policyNo){
+  const stripped = String(policyNo||'').replace(/[-\s\/]/g,'');
+  return 'https://www.aoins.com/ose/customer/customer-dashboard/#/policy-dashboard/policy/'+encodeURIComponent(stripped);
+}
+
+function policyCell(policyNo, ico){
+  if(isAutoOwners(ico)){
+    return '<a href="'+autoOwnersUrl(policyNo)+'" target="_blank" rel="noopener" class="policy-link" title="Open in Auto Owners">'+esc(policyNo)+' <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>';
+  }
+  return '<span class="policy-no">'+esc(policyNo)+'</span>';
+}
 
 function wfSelect(policyNo, current){
   const val = loadWorkflow()[policyNo] || current || 'Not Started';
