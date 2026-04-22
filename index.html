@@ -665,19 +665,16 @@ tr.row-soon:hover td{background:rgba(186,117,23,0.07);}
 .preview-table-wrap tr:last-child td{border-bottom:none;}
 
 /* Load mode radio */
-.load-mode{margin-top:14px;display:none;}
-.load-mode-label{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:8px;}
-.radio-group{display:flex;gap:10px;}
+.load-mode{display:none;gap:6px;}
 .radio-opt{
-  flex:1;border:1px solid var(--border);border-radius:7px;
-  padding:10px 12px;cursor:pointer;transition:all 0.15s;
-  display:flex;align-items:flex-start;gap:8px;
+  border:1px solid var(--border);border-radius:6px;
+  padding:5px 10px;cursor:pointer;transition:all 0.15s;
+  display:flex;align-items:center;gap:5px;font-size:11px;
 }
 .radio-opt:hover{border-color:var(--accent);background:var(--accent-light);}
 .radio-opt.selected{border-color:var(--accent);background:var(--accent-light);}
-.radio-opt input{margin-top:2px;accent-color:var(--accent);}
-.radio-opt-title{font-size:12px;font-weight:500;color:var(--text);}
-.radio-opt-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.radio-opt input{accent-color:var(--accent);margin:0;}
+.radio-opt-title{font-size:11px;font-weight:500;color:var(--text);}
 
 /* Upload btn in sidebar */
 .upload-btn{
@@ -1050,30 +1047,20 @@ footer{
         </div>
       </div>
 
-      <!-- Load mode -->
-      <div class="load-mode" id="load-mode">
-        <div class="load-mode-label">How to load this data</div>
-        <div class="radio-group">
-          <label class="radio-opt selected" id="opt-replace" onclick="selectMode('replace')">
-            <input type="radio" name="loadmode" value="replace" checked>
-            <div>
-              <div class="radio-opt-title">Replace</div>
-              <div class="radio-opt-sub">Clear existing data and load this report</div>
-            </div>
-          </label>
-          <label class="radio-opt" id="opt-merge" onclick="selectMode('merge')">
-            <input type="radio" name="loadmode" value="merge">
-            <div>
-              <div class="radio-opt-title">Merge</div>
-              <div class="radio-opt-sub">Add to existing policies (skip duplicates)</div>
-            </div>
-          </label>
-        </div>
-      </div>
     </div>
     <div class="modal-footer">
       <div style="font-size:11px;color:var(--muted);" id="modal-footer-note"></div>
-      <div style="display:flex;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div class="load-mode" id="load-mode">
+          <label class="radio-opt selected" id="opt-replace" onclick="selectMode('replace')">
+            <input type="radio" name="loadmode" value="replace" checked>
+            <span class="radio-opt-title">Replace</span>
+          </label>
+          <label class="radio-opt" id="opt-merge" onclick="selectMode('merge')">
+            <input type="radio" name="loadmode" value="merge">
+            <span class="radio-opt-title">Merge</span>
+          </label>
+        </div>
         <button class="filter-btn" onclick="closeUploadModal()">Cancel</button>
         <button class="notes-save-btn" id="load-btn" onclick="confirmLoad()"
                 style="width:auto;padding:8px 20px;margin:0;" disabled>Load Report</button>
@@ -1838,7 +1825,7 @@ function onParsed(policies, filename){
   _parsedPolicies = policies;
   setParseStatus('success', `✓ Found ${policies.length} policies in "${filename}"`);
   showPreview(policies);
-  document.getElementById('load-mode').style.display = 'block';
+  document.getElementById('load-mode').style.display = 'flex';
   document.getElementById('load-btn').disabled = false;
   document.getElementById('modal-footer-note').textContent =
     `${policies.length} policies ready to load`;
