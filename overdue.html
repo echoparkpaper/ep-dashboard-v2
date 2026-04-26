@@ -73,6 +73,14 @@ header{background:var(--header);padding:0 24px;height:54px;display:flex;align-it
 
 /* ── Summary ── */
 .summary-row{display:flex;gap:12px;padding:16px 24px;flex-shrink:0;overflow-x:auto;}
+.done-view-bar{padding:14px 24px 4px;flex-shrink:0;}
+.done-view-bar-inner{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;}
+.done-view-bar-inner svg{color:var(--muted);flex-shrink:0;}
+.done-view-search{flex:1;background:transparent;border:none;outline:none;font-family:var(--sans);font-size:13px;color:var(--text);}
+.done-view-search::placeholder{color:var(--muted);}
+.done-view-count{font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px 8px;flex-shrink:0;}
+.notes-close-bottom{background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:8px 16px;font-size:12px;font-family:var(--sans);font-weight:500;cursor:pointer;transition:all 0.15s;}
+.notes-close-bottom:hover{background:var(--border);color:var(--text);}
 .card{flex:1;min-width:130px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;position:relative;overflow:hidden;cursor:pointer;transition:all 0.15s;}
 .card:hover{border-color:var(--border2);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
@@ -327,6 +335,14 @@ tr:hover{background:var(--surface2);}
 
     <div class="summary-row" id="summary-row"></div>
 
+    <div class="done-view-bar" id="done-view-bar" style="display:none;">
+      <div class="done-view-bar-inner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="done-view-search" type="text" placeholder="Search completed accounts — name, account #, policy…" oninput="onSearch(this.value)" id="done-search-input">
+        <span class="done-view-count" id="done-view-count"></span>
+      </div>
+    </div>
+
     <div class="table-wrap-outer">
       <div class="table-container">
         <table>
@@ -363,7 +379,10 @@ tr:hover{background:var(--surface2);}
   <div class="notes-list" id="notes-list"></div>
   <div class="notes-compose">
     <textarea class="notes-textarea" id="note-input" placeholder="Add a note..." rows="2"></textarea>
-    <button class="notes-save-btn" id="note-save-btn" onclick="saveNote()">Save Note</button>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="notes-close-bottom" onclick="closeNotes()">Close</button>
+      <button class="notes-save-btn" id="note-save-btn" onclick="saveNote()" style="margin-top:0;flex:1;">Save Note</button>
+    </div>
   </div>
 </div>
 
@@ -539,7 +558,22 @@ function getFiltered(){
 // ─── Render ──────────────────────────────────────────────────────────────────
 function render(){
   const data = getFiltered();
-  renderCards(data);
+  const summaryRow = document.getElementById('summary-row');
+  const doneBar = document.getElementById('done-view-bar');
+  if(showingDone){
+    if(summaryRow) summaryRow.style.display = 'none';
+    if(doneBar){
+      doneBar.style.display = 'block';
+      const countEl = document.getElementById('done-view-count');
+      if(countEl) countEl.textContent = data.length + ' done';
+      const di = document.getElementById('done-search-input');
+      if(di && di.value !== searchQuery) di.value = searchQuery || '';
+    }
+  } else {
+    if(summaryRow) summaryRow.style.display = '';
+    if(doneBar) doneBar.style.display = 'none';
+    renderCards(data);
+  }
   renderTable(data);
   updateSortIcons();
 }
