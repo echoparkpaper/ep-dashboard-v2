@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Overdue Accounts - Meridian Insurance</title>
+<title>Past Due Accounts - Meridian Insurance</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231e3a5f'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Garamond,Adobe Garamond Pro,Georgia,serif' font-size='15' font-weight='normal' letter-spacing='1' fill='white'%3EMI%3C/text%3E%3C/svg%3E" type="image/svg+xml">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -237,7 +237,7 @@ tr:hover{background:var(--surface2);}
 <div class="login-wrap" id="login-wrap">
   <div class="login-card">
     <div class="login-logo">Meridian Insurance</div>
-    <div class="login-sub">Overdue Accounts</div>
+    <div class="login-sub">Past Due Accounts</div>
     <div class="login-label">Email</div>
     <input class="login-input" id="login-email" type="email" placeholder="you@meridianins.com">
     <div class="login-label">Password</div>
@@ -254,7 +254,7 @@ tr:hover{background:var(--surface2);}
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
     <div class="logo">Meridian Insurance</div>
-    <div class="logo-sub">Overdue Accounts</div>
+    <div class="logo-sub">Past Due Accounts</div>
   </div>
   <div class="header-right">
     <div class="search-wrap">
@@ -262,7 +262,7 @@ tr:hover{background:var(--surface2);}
       <input class="search-box" type="text" placeholder="Search name, policy, account..." oninput="onSearch(this.value)" id="search-input">
     </div>
     <a href="index.html" class="nav-link">Expirations</a>
-    <a href="overdue.html" class="nav-link active">Overdue</a>
+    <a href="overdue.html" class="nav-link active">Past Due</a>
     <a href="admin.html" id="admin-link" style="display:none;" class="nav-link">Admin</a>
     <span id="user-name" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;font-family:var(--sans);padding:6px 12px;border-radius:7px;"></span>
     <button id="logout-btn" onclick="doLogout()" style="display:none;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:10px;font-family:var(--sans);padding:4px 10px;border-radius:5px;cursor:pointer;">Sign Out</button>
@@ -360,7 +360,7 @@ tr:hover{background:var(--surface2);}
             </tr>
           </thead>
           <tbody id="table-body">
-            <tr><td colspan="9" class="empty-msg">No data loaded. Upload an Overdue Accounts report to get started.</td></tr>
+            <tr><td colspan="9" class="empty-msg">No data loaded. Upload a Past Due Accounts report to get started.</td></tr>
           </tbody>
         </table>
       </div>
@@ -389,7 +389,7 @@ tr:hover{background:var(--surface2);}
 <!-- Upload Modal -->
 <div class="modal-overlay" id="upload-overlay" onclick="if(event.target===this)closeUpload()">
   <div class="modal-box">
-    <div class="modal-title">Upload Overdue Accounts Report</div>
+    <div class="modal-title">Upload Past Due Accounts Report</div>
     <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="event.preventDefault();this.classList.remove('drag-over');handleFile(event.dataTransfer.files[0])">
       <input type="file" id="file-input" accept=".pdf" style="display:none" onchange="handleFile(this.files[0])">
       <div class="drop-label">Drop PDF here or <b>click to browse</b></div>
@@ -1076,7 +1076,7 @@ function confirmLoad(){
 let _clearBackup = null;
 
 function clearAllData(){
-  if(!confirm('Clear all overdue account data?')) return;
+  if(!confirm('Clear all past due account data?')) return;
   if(ACCOUNTS.length > 0){
     miApi('PUT','/api/backup/overdue',{ accounts:ACCOUNTS, meta:{ filename:'Backup', count:ACCOUNTS.length, loadedAt:new Date().toLocaleDateString() }});
   }
