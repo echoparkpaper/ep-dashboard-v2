@@ -163,12 +163,12 @@ header{
 .filter-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 
 /* Done-view search bar */
-.done-view-bar{padding:14px 24px 4px;flex-shrink:0;}
-.done-view-bar-inner{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;}
+.done-view-bar{padding:14px 24px 4px;flex-shrink:0;display:flex;align-items:center;gap:14px;}
+.done-view-bar-inner{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px;width:380px;max-width:100%;}
 .done-view-bar-inner svg{color:var(--muted);flex-shrink:0;}
-.done-view-search{flex:1;background:transparent;border:none;outline:none;font-family:var(--sans);font-size:13px;color:var(--text);}
+.done-view-search{flex:1;background:transparent;border:none;outline:none;font-family:var(--sans);font-size:12.5px;color:var(--text);min-width:0;}
 .done-view-search::placeholder{color:var(--muted);}
-.done-view-count{font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px 8px;flex-shrink:0;}
+.done-view-count{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--green);background:var(--green-light);border:1px solid rgba(29,158,117,0.3);border-radius:6px;padding:5px 12px;flex-shrink:0;}
 
 /* ── Summary cards ── */
 .summary-row{
@@ -1020,9 +1020,9 @@ footer{
     <div class="done-view-bar" id="done-view-bar" style="display:none;">
       <div class="done-view-bar-inner">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input class="done-view-search" type="text" placeholder="Search completed policies — client, policy #, line…" oninput="onSearch(this.value)" id="done-search-input">
-        <span class="done-view-count" id="done-view-count"></span>
+        <input class="done-view-search" type="text" placeholder="Search completed policies…" oninput="onSearch(this.value)" id="done-search-input">
       </div>
+      <span class="done-view-count" id="done-view-count"></span>
     </div>
 
     <!-- Table -->
